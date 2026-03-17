@@ -262,9 +262,7 @@ const goPrev = async () => {
             </div>
           </div>
 
-          <ULabel class="text-sm font-medium"
-            >Additional comments (optional)</ULabel
-          >
+          <div class="text-sm font-medium">Additional comments (optional)</div>
 
           <UTextarea
             v-model="comment"
