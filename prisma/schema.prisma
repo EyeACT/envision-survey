@@ -1,0 +1,66 @@
+generator client {
+    provider        = "prisma-client"
+    previewFeatures = ["strictUndefinedChecks"]
+    output          = "../shared/generated/"
+    engineType      = "client"
+}
+
+generator kysely {
+    provider = "prisma-kysely"
+
+    output   = "../shared/generated/"
+    fileName = "kysely.ts"
+}
+
+datasource db {
+    provider = "postgresql"
+}
+
+model User {
+    id          String   @id @default(cuid(2)) // token for the user (should be anonymous)
+    posterOrder String[] // randomized poster IDs assigned on first survey visit
+
+    created    DateTime     @default(now())
+    updated    DateTime     @updatedAt
+    evaluation evaluation[]
+}
+
+model Dataset {
+    id String @id @default(cuid(2))
+
+    title       String
+    description String
+
+    keywords String[]
+
+    fileExtensions    String[]
+    subjectCategories String[]
+    authorAffiliation String
+
+    sourceReposityId String
+
+    created DateTime @default(now())
+    updated DateTime @updatedAt
+
+    evaluation evaluation[]
+}
+
+model evaluation {
+    id String @id @default(cuid(2))
+
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    datasetId String
+    dataset   Dataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+    label String //"eye-imaging|eye-sofware|eye-other|non-eye"
+
+    confidence Int // 1-5 confidence scale
+    comment    String?
+
+    created DateTime @default(now())
+    updated DateTime @updatedAt
+
+    @@unique([userId, datasetId])
+}
