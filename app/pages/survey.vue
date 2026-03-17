@@ -8,70 +8,102 @@ useSeoMeta({ title: "Survey" });
 const route = useRoute();
 const toast = useToast();
 
-const { data, error } = await useFetch("/api/poster");
+const { data, error } = await useFetch("/api/dataset");
 
 if (error.value) {
   toast.add({
-    title: "Failed to load posters",
+    title: "Failed to load datasets",
     color: "error",
     icon: "material-symbols:error",
   });
 }
 
-const posters = computed(() => data.value?.posters ?? []);
+const datasets = computed(() => data.value?.datasets ?? []);
 const evaluations = computed(() => data.value?.evaluations ?? {});
-const total = computed(() => posters.value.length);
+const total = computed(() => datasets.value.length);
 
 const index = computed(() => {
   const i = Number(route.query.index ?? 0);
   return isNaN(i) ? 0 : Math.max(0, Math.min(i, total.value - 1));
 });
 
-const poster = computed(() => posters.value[index.value]);
+const dataset = computed(() => datasets.value[index.value]);
 const progress = computed(() =>
   total.value > 0 ? Math.round(((index.value + 1) / total.value) * 100) : 0,
 );
 
-// Per-poster answer state (pre-filled from existing evaluations)
-const selectedAnswer = ref<boolean | null>(null);
+const LABELS = [
+  {
+    value: "eye-imaging",
+    label: "Eye Imaging",
+    icon: "material-symbols:visibility",
+    color: "primary",
+  },
+  {
+    value: "eye-software",
+    label: "Eye Software",
+    icon: "material-symbols:code",
+    color: "secondary",
+  },
+  {
+    value: "eye-other",
+    label: "Eye Other",
+    icon: "material-symbols:eye-tracking",
+    color: "warning",
+  },
+  {
+    value: "non-eye",
+    label: "Non-Eye",
+    icon: "material-symbols:block",
+    color: "neutral",
+  },
+] as const;
+
+type Label = (typeof LABELS)[number]["value"];
+
+const selectedLabel = ref<Label | null>(null);
 const confidence = ref(3);
+const comment = ref("");
 const submitting = ref(false);
 
 watch(
-  [poster, evaluations],
+  [dataset, evaluations],
   () => {
-    if (!poster.value) return;
-    const existing = evaluations.value[poster.value.id];
+    if (!dataset.value) return;
+    const existing = evaluations.value[dataset.value.id];
     if (existing) {
-      selectedAnswer.value = existing.isPoster;
+      selectedLabel.value = existing.label as Label;
       confidence.value = existing.confidence;
+      comment.value = existing.comment ?? "";
     } else {
-      selectedAnswer.value = null;
+      selectedLabel.value = null;
       confidence.value = 3;
+      comment.value = "";
     }
   },
   { immediate: true },
 );
 
-const canSubmit = computed(() => selectedAnswer.value !== null);
+const canSubmit = computed(() => selectedLabel.value !== null);
 
 const submitAndNavigate = async (nextIndex: number) => {
-  if (!poster.value || selectedAnswer.value === null) return;
+  if (!dataset.value || selectedLabel.value === null) return;
   submitting.value = true;
   try {
     await $fetch("/api/evaluation", {
       method: "POST",
       body: {
-        posterId: poster.value.id,
-        isPoster: selectedAnswer.value,
+        datasetId: dataset.value.id,
+        label: selectedLabel.value,
         confidence: confidence.value,
+        comment: comment.value || undefined,
       },
     });
-    // Update local evaluations cache so back-navigation shows correct values
     if (data.value) {
-      data.value.evaluations[poster.value.id] = {
-        isPoster: selectedAnswer.value,
+      data.value.evaluations[dataset.value.id] = {
+        label: selectedLabel.value,
         confidence: confidence.value,
+        comment: comment.value || null,
       } as never;
     }
   } catch {
@@ -103,76 +135,143 @@ const goPrev = async () => {
     <!-- Progress -->
     <div class="flex items-center gap-4">
       <span class="text-muted shrink-0 text-sm">
-        Poster {{ index + 1 }} of {{ total }}
+        Dataset {{ index + 1 }} of {{ total }}
       </span>
       <UProgress :value="progress" class="flex-1" />
       <span class="text-muted shrink-0 text-sm">{{ progress }}%</span>
     </div>
 
-    <!-- Poster image -->
+    <!-- Dataset card -->
     <div
-      v-if="poster"
-      class="bg-elevated flex items-center justify-center overflow-hidden rounded-xl border"
+      v-if="dataset"
+      class="bg-elevated flex flex-col gap-4 rounded-xl border p-6"
     >
-      <img
-        :src="poster.url"
-        alt="Poster"
-        class="max-h-[75vh] w-full object-contain"
-      />
+      <div>
+        <h2 class="text-xl font-bold">{{ dataset.title }}</h2>
+        <p class="text-muted mt-1 text-sm">{{ dataset.description }}</p>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div v-if="dataset.keywords?.length">
+          <p
+            class="text-muted mb-1 text-xs font-semibold tracking-wide uppercase"
+          >
+            Keywords
+          </p>
+          <div class="flex flex-wrap gap-1">
+            <UBadge
+              v-for="kw in dataset.keywords"
+              :key="kw"
+              variant="soft"
+              size="sm"
+              >{{ kw }}</UBadge
+            >
+          </div>
+        </div>
+
+        <div v-if="dataset.fileExtensions?.length">
+          <p
+            class="text-muted mb-1 text-xs font-semibold tracking-wide uppercase"
+          >
+            File Extensions
+          </p>
+          <div class="flex flex-wrap gap-1">
+            <UBadge
+              v-for="ext in dataset.fileExtensions"
+              :key="ext"
+              variant="outline"
+              size="sm"
+              >{{ ext }}</UBadge
+            >
+          </div>
+        </div>
+
+        <div v-if="dataset.subjectCategories?.length">
+          <p
+            class="text-muted mb-1 text-xs font-semibold tracking-wide uppercase"
+          >
+            Subject Categories
+          </p>
+          <div class="flex flex-wrap gap-1">
+            <UBadge
+              v-for="cat in dataset.subjectCategories"
+              :key="cat"
+              variant="soft"
+              color="secondary"
+              size="sm"
+              >{{ cat }}</UBadge
+            >
+          </div>
+        </div>
+
+        <div v-if="dataset.authorAffiliation">
+          <p
+            class="text-muted mb-1 text-xs font-semibold tracking-wide uppercase"
+          >
+            Author Affiliation
+          </p>
+          <p class="text-sm">{{ dataset.authorAffiliation }}</p>
+        </div>
+      </div>
     </div>
     <div
       v-else
-      class="bg-elevated flex h-64 items-center justify-center rounded-xl border"
+      class="bg-elevated flex h-40 items-center justify-center rounded-xl border"
     >
-      <p class="text-muted text-sm">No poster available</p>
+      <p class="text-muted text-sm">No dataset available</p>
     </div>
 
     <!-- Question -->
     <div class="flex flex-col gap-4">
-      <p class="text-lg font-semibold">Is this a scientific poster?</p>
+      <p class="text-lg font-semibold">How would you classify this dataset?</p>
 
-      <div class="flex gap-3">
+      <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <UButton
+          v-for="opt in LABELS"
+          :key="opt.value"
           size="xl"
-          :variant="selectedAnswer === true ? 'solid' : 'outline'"
-          color="success"
-          icon="material-symbols:check-circle"
-          class="flex-1 justify-center"
-          @click="selectedAnswer = true"
+          :variant="selectedLabel === opt.value ? 'solid' : 'outline'"
+          :color="opt.color"
+          :icon="opt.icon"
+          class="justify-center"
+          @click="selectedLabel = opt.value"
         >
-          Yes
-        </UButton>
-        <UButton
-          size="xl"
-          :variant="selectedAnswer === false ? 'solid' : 'outline'"
-          color="error"
-          icon="material-symbols:cancel"
-          class="flex-1 justify-center"
-          @click="selectedAnswer = false"
-        >
-          No
+          {{ opt.label }}
         </UButton>
       </div>
 
       <!-- Confidence slider -->
       <Transition name="fade">
-        <div v-if="selectedAnswer !== null" class="flex flex-col gap-2 pt-2">
-          <div class="flex items-center justify-between">
-            <span class="text-sm font-medium">Confidence</span>
-            <span class="text-muted text-sm">{{ confidence }} / 5</span>
+        <div v-if="selectedLabel !== null" class="flex flex-col gap-4 pt-2">
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-medium">Confidence</span>
+              <span class="text-muted text-sm">{{ confidence }} / 5</span>
+            </div>
+
+            <input
+              v-model.number="confidence"
+              type="range"
+              min="1"
+              max="5"
+              step="1"
+            />
+            <div class="text-muted flex justify-between text-xs">
+              <span>Not confident</span>
+              <span>Very confident</span>
+            </div>
           </div>
-          <input
-            v-model.number="confidence"
-            type="range"
-            min="1"
-            max="5"
-            step="1"
-            class="accent-primary h-2 w-full cursor-pointer rounded-full"
+
+          <ULabel class="text-sm font-medium"
+            >Additional comments (optional)</ULabel
+          >
+
+          <UTextarea
+            v-model="comment"
+            placeholder="Optional comment..."
+            :rows="2"
+            autoresize
           />
-          <div class="text-muted flex justify-between text-xs">
-            <span>Not confident</span>
-            <span>Very confident</span>
-          </div>
         </div>
       </Transition>
     </div>

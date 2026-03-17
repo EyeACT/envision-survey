@@ -2,16 +2,16 @@ export default defineEventHandler(async (event) => {
   const session = await requireUserSession(event);
   const { user } = session;
 
-  // Load user with current posterOrder
+  // Load user with current posterOrder (reused to store dataset IDs)
   let dbUser = await prisma.user.findUniqueOrThrow({
     where: { id: user.id },
   });
 
   // If no order yet, generate a randomized one and persist it
   if (dbUser.posterOrder.length === 0) {
-    const allPosters = await prisma.poster.findMany({ select: { id: true } });
-    const shuffled = allPosters
-      .map((p) => p.id)
+    const allDatasets = await prisma.dataset.findMany({ select: { id: true } });
+    const shuffled = allDatasets
+      .map((d) => d.id)
       .sort(() => Math.random() - 0.5);
 
     dbUser = await prisma.user.update({
@@ -20,22 +20,24 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Fetch posters in the user's order
-  const posterMap = await prisma.poster
+  // Fetch datasets in the user's order
+  const datasetMap = await prisma.dataset
     .findMany({
       where: { id: { in: dbUser.posterOrder } },
     })
-    .then((rows) => new Map(rows.map((p) => [p.id, p])));
+    .then((rows) => new Map(rows.map((d) => [d.id, d])));
 
-  const posters = dbUser.posterOrder
-    .map((id) => posterMap.get(id))
+  const datasets = dbUser.posterOrder
+    .map((id) => datasetMap.get(id))
     .filter(Boolean);
 
-  // Fetch existing evaluations keyed by posterId
+  // Fetch existing evaluations keyed by datasetId
   const evalRows = await prisma.evaluation.findMany({
     where: { userId: user.id },
   });
-  const evaluations = Object.fromEntries(evalRows.map((e) => [e.posterId, e]));
+  const evaluations = Object.fromEntries(
+    evalRows.map((e) => [e.datasetId, e]),
+  );
 
-  return { posters, evaluations };
+  return { datasets, evaluations };
 });

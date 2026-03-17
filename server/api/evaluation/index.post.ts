@@ -1,9 +1,12 @@
 import { z } from "zod";
 
+const LABELS = ["eye-imaging", "eye-software", "eye-other", "non-eye"] as const;
+
 const bodySchema = z.object({
-  posterId: z.string(),
-  isPoster: z.boolean(),
+  datasetId: z.string(),
+  label: z.enum(LABELS),
   confidence: z.number().int().min(1).max(5),
+  comment: z.string().optional(),
 });
 
 export default defineEventHandler(async (event) => {
@@ -14,20 +17,22 @@ export default defineEventHandler(async (event) => {
 
   const evaluation = await prisma.evaluation.upsert({
     where: {
-      userId_posterId: {
+      userId_datasetId: {
         userId: user.id,
-        posterId: body.posterId,
+        datasetId: body.datasetId,
       },
     },
     create: {
       userId: user.id,
-      posterId: body.posterId,
-      isPoster: body.isPoster,
+      datasetId: body.datasetId,
+      label: body.label,
       confidence: body.confidence,
+      comment: body.comment,
     },
     update: {
-      isPoster: body.isPoster,
+      label: body.label,
       confidence: body.confidence,
+      comment: body.comment,
     },
   });
 
