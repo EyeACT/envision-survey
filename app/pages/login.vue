@@ -4,7 +4,7 @@ definePageMeta({
 });
 
 useSeoMeta({
-  title: "Login",
+  title: "Resume Session",
 });
 
 const route = useRoute();
@@ -31,7 +31,7 @@ async function login() {
     .then(({ id }) => {
       userId.value = id;
       toast.add({
-        title: "Logged in",
+        title: "Session Resumed",
         color: "success",
         description: `Welcome back! Your ID: ${id}`,
         icon: "material-symbols:check-circle-outline",
@@ -41,7 +41,7 @@ async function login() {
     })
     .catch((error) => {
       toast.add({
-        title: "Error logging in",
+        title: "Error restoring session",
         color: "error",
         description: error.data?.statusMessage ?? "Unknown error",
         icon: "material-symbols:error",
@@ -57,15 +57,15 @@ async function login() {
   <UCard class="w-full max-w-lg bg-white/75 backdrop-blur dark:bg-white/5">
     <div class="w-full px-4 py-5 sm:p-6">
       <div class="flex flex-col items-center justify-center">
-        <h2 class="my-1 text-2xl font-bold">Welcome back</h2>
+        <h2 class="my-1 text-2xl font-bold">Resume Your Session</h2>
         <p class="text-center text-sm text-balance text-gray-500">
-          Enter your saved User ID to restore your session.
+          Enter your Reviewer ID to continue where you left off.
         </p>
       </div>
 
       <div class="mt-6 space-y-4">
-        <UFormField label="User ID" name="token">
-          <UInput v-model="token" placeholder="Paste your User ID here" />
+        <UFormField label="Reviewer ID" name="token">
+          <UInput v-model="token" placeholder="Paste your Reviewer ID here" />
         </UFormField>
 
         <UButton
@@ -74,16 +74,16 @@ async function login() {
           :disabled="!token"
           @click="login"
         >
-          Login
+          Continue
         </UButton>
       </div>
     </div>
 
     <template #footer>
       <p class="text-center text-sm">
-        Don't have an ID yet?
+        New reviewer?
         <NuxtLink to="/signup" class="text-primary-500 font-medium">
-          Generate one
+          Get a Reviewer ID
         </NuxtLink>
       </p>
     </template>

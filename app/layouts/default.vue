@@ -31,9 +31,7 @@ const footerItems: NavigationMenuItem[] = [
   <div>
     <UHeader>
       <template #title>
-        <NuxtLink to="/" class="flex text-2xl font-bold">
-          FAIR Data Poster Survey
-        </NuxtLink>
+        <NuxtLink to="/"> FAIR Data Poster Survey </NuxtLink>
       </template>
 
       <template #right>
@@ -42,7 +40,8 @@ const footerItems: NavigationMenuItem[] = [
             color="neutral"
             variant="ghost"
             icon="i-heroicons-clipboard-document-20-solid"
-            :label="userId ? `User ID: ${userId}` : 'No ID'"
+            class="text-xs"
+            :label="userId ? `Reviewer ID: ${userId}` : 'No ID'"
             @click="copyToClipboard"
           />
         </UTooltip>
@@ -59,14 +58,14 @@ const footerItems: NavigationMenuItem[] = [
 
           <div v-else class="flex items-center justify-center gap-3">
             <UButton to="/login" color="neutral" variant="outline">
-              Sign in
+              Resume Session
             </UButton>
 
             <UButton to="/signup" color="neutral">
               <template #trailing>
                 <Icon name="i-heroicons-arrow-right-20-solid" size="20" />
               </template>
-              Sign up
+              Get Started
             </UButton>
           </div>
         </AuthState>
