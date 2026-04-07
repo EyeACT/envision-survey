@@ -17,50 +17,44 @@ datasource db {
 }
 
 model User {
-    id String @id @default(cuid(2)) // token for the user (should be anonymous)
-
-    created DateTime @default(now())
-    updated DateTime @updatedAt
-
-    evaluation evaluation[]
+  id          String       @id @default(cuid(2))
+  created     DateTime     @default(now())
+  updated     DateTime     @updatedAt
+  evaluations evaluation[]
 }
 
 model Dataset {
-    id String @id @default(cuid(2))
-
-    title       String
-    description String
-
-    keywords String[]
-
-    fileExtensions    String[]
-    subjectCategories String[]
-    authorAffiliation String
-
-    sourceReposityId String
-
-    created DateTime @default(now())
-    updated DateTime @updatedAt
-
-    evaluation evaluation[]
+  id                String       @id @default(cuid(2))
+  title             String
+  description       String
+  url               String?
+  keywords          String[]
+  fileExtensions    String[]
+  subjectCategories String[]
+  authorAffiliation String
+  sourceReposityId  String
+  
+  // Logic fields
+  evaluationCount   Int          @default(0)
+  
+  created           DateTime     @default(now())
+  updated           DateTime     @updatedAt
+  evaluations       evaluation[]
 }
 
 model evaluation {
-    id String @id @default(cuid(2))
+  id         String   @id @default(cuid(2))
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  datasetId  String
+  dataset    Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
 
-    userId String
-    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label      String   
+  confidence Int      
+  comment    String?
 
-    datasetId String
-    dataset   Dataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  created    DateTime @default(now())
+  updated    DateTime @updatedAt
 
-    label String //"eye-imaging|eye-sofware|eye-other|non-eye"
-
-    confidence Int // 1-5 confidence scale
-    comment    String?
-
-    created DateTime @default(now())
-    updated DateTime @updatedAt
-
-    @@unique([userId, datasetId])
+  @@unique([userId, datasetId])
 }

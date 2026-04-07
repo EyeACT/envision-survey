@@ -29,9 +29,6 @@ const logout = async () => {
     </div>
 
     <div class="flex flex-col gap-3 w-full">
-      <UButton to="/survey?index=0" variant="outline" block>
-        Review again from the start
-      </UButton>
       <UButton color="neutral" variant="ghost" block @click="logout">
         Logout
       </UButton>
