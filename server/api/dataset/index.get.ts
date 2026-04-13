@@ -1,48 +1,53 @@
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event);
-  if (!session.user?.id) {
-    throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
-  }
+  if (!session.user?.id) throw createError({ statusCode: 401 });
 
   const userId = session.user.id;
 
-  // 1. Count how many the user has already done
-  const completedCount = await prisma.evaluation.count({
-    where: { userId: userId }
-  });
+  return await prisma.$transaction(async (tx) => {
+    // 1. Get current assignments
+    let assignments = await tx.assignment.findMany({
+      where: { userId },
+      include: { dataset: true },
+      orderBy: { createdAt: 'asc' }
+    });
 
-  // 2. If they hit the limit, return empty datasets
-  if (completedCount >= 100) {
+    // 2. If first time, assign 100 records
+    if (assignments.length === 0) {
+      const available = await tx.dataset.findMany({
+        where: { evaluationCount: { lt: 3 } },
+        take: 100,
+        orderBy: { id: 'asc' }
+      });
+
+      await tx.assignment.createMany({
+        data: available.map(d => ({ userId, datasetId: d.id })),
+        skipDuplicates: true
+      });
+
+      assignments = await tx.assignment.findMany({
+        where: { userId },
+        include: { dataset: true },
+        orderBy: { createdAt: 'asc' }
+      });
+    }
+
+    const datasets = assignments.map(a => a.dataset);
+
+    // 3. Fetch existing evaluations so 'Back' button works after a refresh
+    const evals = await tx.evaluation.findMany({
+      where: { userId, datasetId: { in: datasets.map(d => d.id) } }
+    });
+
+    const evaluationMap = evals.reduce((acc, curr) => {
+      acc[curr.datasetId] = curr;
+      return acc;
+    }, {} as Record<string, any>);
+
     return {
-      datasets: [],
-      evaluations: {},
-      isFinished: true // Flag for the frontend
+      datasets,
+      evaluations: evaluationMap,
+      total: datasets.length
     };
-  }
-
-  // 3. Otherwise, fetch the remaining records up to the 100 limit
-  const limitRemaining = 100 - completedCount;
-
-  const datasets = await prisma.dataset.findMany({
-    where: {
-      evaluationCount: { lt: 3 },
-      evaluations: { none: { userId: userId } }
-    },
-    take: Math.min(limitRemaining, 100), 
   });
-
-  const userEvaluations = await prisma.evaluation.findMany({
-    where: { userId: userId }
-  });
-
-  const evaluationMap = userEvaluations.reduce((acc, curr) => {
-    acc[curr.datasetId] = curr;
-    return acc;
-  }, {} as Record<string, any>);
-
-  return {
-    datasets,
-    evaluations: evaluationMap,
-    isFinished: false
-  };
 });

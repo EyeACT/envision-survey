@@ -31,7 +31,8 @@ const footerItems: NavigationMenuItem[] = [
   <div>
     <UHeader>
       <template #title>
-        <NuxtLink to="/"> FAIR Data Poster Survey </NuxtLink>
+        <NuxtLink to="/"> Envision Survey
+ </NuxtLink>
       </template>
 
       <template #right>

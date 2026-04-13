@@ -37,7 +37,7 @@ async function login() {
         icon: "material-symbols:check-circle-outline",
       });
 
-      window.location.href = "/survey";
+      window.location.href = "/";
     })
     .catch((error) => {
       toast.add({
