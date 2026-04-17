@@ -20,7 +20,13 @@ model User {
   id          String       @id @default(cuid(2))
   created     DateTime     @default(now())
   updated     DateTime     @updatedAt
-  evaluations evaluation[]
+
+  // New Background Fields
+  careerLevel      String?  
+  primaryBackground String?  
+  imagingFamiliarity String? 
+
+  evaluations Evaluation[]
 }
 
 model Dataset {
@@ -39,10 +45,22 @@ model Dataset {
   
   created           DateTime     @default(now())
   updated           DateTime     @updatedAt
-  evaluations       evaluation[]
+  evaluations       Evaluation[]
+  assignments       Assignment[]
 }
 
-model evaluation {
+model Assignment {
+  id        String   @id @default(cuid())
+  userId    String
+  datasetId String
+  createdAt DateTime @default(now())
+
+  dataset   Dataset @relation(fields: [datasetId], references: [id])
+
+  @@unique([userId, datasetId])
+}
+
+model Evaluation {
   id         String   @id @default(cuid(2))
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)

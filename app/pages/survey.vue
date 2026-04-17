@@ -5,14 +5,51 @@ useSeoMeta({ title: "Survey" });
 const route = useRoute();
 const toast = process.client ? useToast() : null;
 
-// Fetch data
-const { data, error, refresh } = await useFetch("/api/dataset", {
-  default: () => ({ datasets: [], evaluations: {} }),
-});
+const cleanKeywords = (rawKeywords: any): string[] => {
+  if (!rawKeywords) return [];
+  
+  // 1. Convert to string and fix those broken HTML entities
+  let text = String(rawKeywords)
+    .replace(/&#\s*\d+\s*;?/g, '') // Completely remove all &# numbers
+    .replace(/[<>]/g, '');         // Remove all brackets
 
-if (error.value && process.client) {
-  toast?.add({ title: "Failed to load datasets", color: "red" });
-}
+  // 2. Split by commas
+  return text.split(',')
+    .map(k => k.trim())
+    .filter(k => {
+      // THE AGGRESSIVE FILTER:
+      // Remove if it's just a number
+      if (/^\d+$/.test(k)) return false;
+      
+      // Remove if it contains common "scientific noise" words
+      const noise = ['test whether', 'differences', 'participants', 'control'];
+      if (noise.some(word => k.toLowerCase().includes(word))) return false;
+
+      // Remove if it's too short
+      return k.length > 2;
+    });
+};
+
+// --- Data Fetching ---
+const { data, refresh } = await useFetch("/api/dataset", {
+  default: () => ({ datasets: [], evaluations: {}, total: 0 }),
+  onResponse({ response }) {
+    // Only auto-jump if the user just arrived (no index in URL)
+    if (!route.query.index && response._data?.datasets) {
+      const datasets = response._data.datasets;
+      const evals = response._data.evaluations;
+
+      // Find the first index where no evaluation exists
+      const firstPendingIndex = datasets.findIndex(d => !evals[d.id]);
+
+      // If they finished everything, stay at 0 or go to a complete page
+      // Otherwise, jump to their current pending task
+      if (firstPendingIndex !== -1 && firstPendingIndex !== 0) {
+        navigateTo({ query: { index: firstPendingIndex } });
+      }
+    }
+  }
+});
 
 const datasets = computed(() => data.value?.datasets ?? []);
 const evaluations = computed(() => data.value?.evaluations ?? {});
@@ -25,14 +62,11 @@ const index = computed(() => {
 
 const dataset = computed(() => datasets.value[index.value] ?? null);
 
-// Normalize data keys (Mapping DB camelCase to Template snake_case)
 const normalizedDataset = computed(() => {
   if (!dataset.value) return null;
   return {
     ...dataset.value,
-    author_affiliation: dataset.value.authorAffiliation || "Unknown",
-    source: dataset.value.sourceReposityId || "Unknown",
-    keywords: Array.isArray(dataset.value.keywords) ? dataset.value.keywords : [],
+    keywords: cleanKeywords(dataset.value.keywords),
     fileExtensions: Array.isArray(dataset.value.fileExtensions) ? dataset.value.fileExtensions : [],
   };
 });
@@ -41,40 +75,81 @@ const progress = computed(() =>
   total.value > 0 ? Math.round(((index.value + 1) / total.value) * 100) : 0
 );
 
-const confidence = ref<number | null>(null);
+const confidence = ref<"yes" | "no" | "maybe" | null>(null);
 const comment = ref("");
 const submitting = ref(false);
 const canSubmit = computed(() => confidence.value !== null);
 
-// Load existing evaluation if user navigates back
 watch(dataset, (newVal) => {
   if (!newVal) return;
+
   const existing = evaluations.value[newVal.id];
-  confidence.value = existing?.confidence ?? null;
-  comment.value = existing?.comment ?? "";
+  
+  if (existing) {
+    // Match the scores from your scoreMapping
+    if (existing.confidence === 5) confidence.value = 'yes';
+    else if (existing.confidence === 0) confidence.value = 'no';
+    else if (existing.confidence === 3) confidence.value = 'maybe';
+    
+    comment.value = existing.comment ?? "";
+  } else {
+    // It's a brand new record, clear the form
+    confidence.value = null;
+    comment.value = "";
+  }
 }, { immediate: true });
+
+const goBack = async () => {
+  if (index.value > 0) {
+    await navigateTo({ query: { index: index.value - 1 } });
+  }
+};
 
 const submitAndNavigate = async (nextIndex: number) => {
   if (!dataset.value || confidence.value === null) return;
   submitting.value = true;
 
+  const currentId = dataset.value.id;
+  const currentConfidence = confidence.value;
+  const currentComment = comment.value;
+
+  const scoreMapping = {
+    yes: { score: 5, label: "eye-imaging" },
+    no: { score: 0, label: "non-eye-imaging" },
+    maybe: { score: 3, label: "possible-eye-imaging" }
+  };
+
   try {
+    const score = scoreMapping[currentConfidence].score;
+    const label = scoreMapping[currentConfidence].label;
+
     await $fetch("/api/evaluation", {
       method: "POST",
       body: {
-        datasetId: dataset.value.id,
-        confidence: confidence.value,
-        comment: comment.value || null,
-        // Crucial fix: provide the label the backend expects
-        label: confidence.value >= 3 ? "eye-imaging" : "non-eye-imaging"
+        datasetId: currentId,
+        confidence: score,
+        comment: currentComment || null,
+        label: label
       },
     });
+
+    // --- THE FIX: MANUALLY UPDATE LOCAL STATE ---
+    // This ensures that when you go back, the UI finds this record in the map
+    if (data.value?.evaluations) {
+      data.value.evaluations[currentId] = {
+        datasetId: currentId,
+        confidence: score,
+        label: label,
+        comment: currentComment
+      };
+    }
+
+    // Still call refresh to keep the server and progress bar in sync
+    await refresh();
 
     if (nextIndex >= total.value) {
       await navigateTo("/complete");
     } else {
-      confidence.value = null;
-      comment.value = "";
       await navigateTo({ query: { index: nextIndex } });
     }
   } catch (err) {
@@ -83,165 +158,132 @@ const submitAndNavigate = async (nextIndex: number) => {
     submitting.value = false;
   }
 };
-
 const goNext = () => submitAndNavigate(index.value + 1);
-
-const isFinished = computed(() => data.value?.isFinished || (data.value?.datasets.length === 0 && !submitting.value));
-
-watchEffect(() => {
-  if (isFinished.value && data.value) {
-    navigateTo("/complete");
-  }
-});
 </script>
 
 <template>
   <div class="min-h-screen bg-white font-sans antialiased text-slate-900">
-    <header class="border-b border-slate-200 bg-white px-8 py-6">
-      <div class="mx-auto max-w-[1600px] flex items-center justify-between">
-        <div class="flex items-center gap-6">
-          <div class="h-12 w-12 flex items-center justify-center rounded-lg bg-[#00897b] text-white text-xl font-bold">
+    <header class="border-b border-slate-200 bg-white px-6 py-3 sticky top-0 z-30">
+      <div class="mx-auto max-w-[1400px] flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <div class="h-9 w-9 flex items-center justify-center rounded bg-[#00897b] text-white font-bold text-sm">
             {{ index + 1 }}
           </div>
-          <div>
-            <h1 class="text-sm font-bold uppercase tracking-wider text-slate-500">Record Review</h1>
-            <p class="text-xs text-slate-400">Record ID: #{{ normalizedDataset?.id }}</p>
-          </div>
+          <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Record Review #{{ normalizedDataset?.id }}</p>
         </div>
-        <div class="flex flex-col items-end gap-2">
-          <div class="flex gap-10 text-xs text-slate-400 font-bold">
-            <span>Progress</span>
-            <span>{{ progress }}%</span>
-          </div>
-          <div class="w-80 h-2 bg-slate-100 rounded-full">
+        <div class="flex items-center gap-4">
+          <span class="text-[11px] font-bold text-slate-500 uppercase tracking-tighter">Progress: {{ progress }}%</span>
+          <div class="w-40 h-1.5 bg-slate-100 rounded-full overflow-hidden">
             <div class="h-full bg-[#00897b] transition-all" :style="{ width: `${progress}%` }"></div>
           </div>
         </div>
       </div>
     </header>
 
-    <main class="mx-auto max-w-[1600px] px-8 py-12">
-      <div v-if="normalizedDataset" class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+    <main class="mx-auto max-w-[1400px] px-6 py-6">
+      <div class="mb-6 px-5 py-4 border border-slate-200 rounded-xl bg-slate-50/50 flex items-start gap-4 shadow-sm">
+        <UIcon name="i-heroicons-shield-check" class="w-5 h-5 text-[#00897b] mt-0.5 shrink-0" />
+        <div class="text-[13px] leading-relaxed text-slate-600">
+          Please review the Dataset details on the left. 
+          Complete the Evaluation on the right. 
+          Select "Submit & Next" to save the record and advance.
+        </div>
+      </div>
+
+      <div v-if="normalizedDataset" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         
-        <div class="lg:col-span-7 border border-slate-200 rounded-2xl p-10 shadow-sm">
-          <div class="space-y-10">
-            <section>
-              <div class="flex items-center gap-2 text-xs font-bold text-[#00897b] uppercase tracking-wider mb-3">
-                Title
-              </div>
-              <h2 class="text-3xl font-bold text-slate-800 leading-tight">{{ normalizedDataset.title }}</h2>
+        <div class="lg:col-span-8 border border-slate-200 rounded-xl p-8 shadow-sm flex flex-col bg-white">
+          <div class="flex-1 space-y-8">
+            <section v-if="normalizedDataset.title">
+              <div class="text-[10px] font-bold text-[#00897b] uppercase tracking-widest mb-1.5">Title</div>
+              <h2 class="text-2xl font-bold text-slate-800 leading-tight tracking-tight">{{ normalizedDataset.title }}</h2>
             </section>
 
-            <section>
-              <div class="flex items-center gap-2 text-xs font-bold text-[#00897b] uppercase tracking-wider mb-3">
-                Description
-              </div>
-              <div class="text-lg font-medium text-slate-700">
-                {{ normalizedDataset.description }}
-              </div>
+            <section v-if="normalizedDataset.description">
+              <div class="text-[10px] font-bold text-[#00897b] uppercase tracking-widest mb-1.5">Description</div>
+              <div class="text-[15px] text-slate-700 leading-relaxed">{{ normalizedDataset.description }}</div>
             </section>
 
-            <div class="grid grid-cols-2 gap-8">
-              <section>
-                <div class="flex items-center gap-2 text-xs font-bold text-[#00897b] uppercase tracking-wider mb-3">
-                  Keywords / Tags
-                </div>
-                <div class="text-lg font-medium text-slate-700">
-                  {{ normalizedDataset.keywords.join(', ') }}
-                </div>
+            <div class="grid grid-cols-2 gap-8 pt-4 border-t border-slate-100">
+              <section v-if="normalizedDataset.keywords?.length">
+                <div class="text-[10px] font-bold text-[#00897b] uppercase tracking-widest mb-1.5">Identifiers / Keywords</div>
+                <div class="text-sm text-slate-600">{{ normalizedDataset.keywords.join(', ') }}</div>
               </section>
-              <section>
-                <div class="flex items-center gap-2 text-xs font-bold text-[#00897b] uppercase tracking-wider mb-3">
-                  File Extensions
-                </div>
-                <div class="text-lg font-medium text-slate-700">
-                  {{ normalizedDataset.fileExtensions.join('  ') }}
-                </div>
+
+              <section v-if="normalizedDataset.fileExtensions?.length">
+                <div class="text-[10px] font-bold text-[#00897b] uppercase tracking-widest mb-1.5">File Types</div>
+                <div class="text-sm font-mono text-slate-500">{{ normalizedDataset.fileExtensions.join(', ') }}</div>
               </section>
             </div>
-
-            <section>
-              <div class="flex items-center gap-2 text-xs font-bold text-[#00897b] uppercase tracking-wider mb-2">
-                Source Repository
-              </div>
-              <p class="text-lg font-medium text-slate-700">{{ normalizedDataset.source }}</p>
-            </section>
-
-            <section>
-              <div class="flex items-center gap-2 text-xs font-bold text-[#00897b] uppercase tracking-wider mb-2">
-                Author's Affiliation
-              </div>
-              <p class="text-lg font-medium text-slate-700">{{ normalizedDataset.author_affiliation }}</p>
-            </section>
-
-            <section>
-              <div class="flex items-center gap-2 text-xs font-bold text-[#00897b] uppercase tracking-wider mb-3">
-                Record URL
-              </div>
-              <a :href="normalizedDataset.url" 
-                target="_blank" 
-                class="text-sm text-[#00a2ed] font-bold hover:underline flex items-start gap-2 break-all"
-              >
-                <UIcon name="i-heroicons-link" class="w-5 h-5 shrink-0 mt-0.5" />
-                <span>{{ normalizedDataset.url }}</span>
-              </a>
-            </section>
           </div>
+
+          <section v-if="normalizedDataset.source && normalizedDataset.source !== 'Unknown'" class="mt-8 pt-4 border-t border-slate-50">
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Source Repository</div>
+            <p class="text-sm font-medium text-slate-600">{{ normalizedDataset.source }}</p>
+          </section>
         </div>
 
-        <div class="lg:col-span-5 border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-          <div class="p-10 flex-1 space-y-10">
-            <h3 class="text-2xl font-bold text-slate-800">Scoring Per Record</h3>
+        <div class="lg:col-span-4 border border-slate-200 rounded-xl shadow-sm bg-white overflow-hidden flex flex-col">
+          <div class="p-8 flex-1 flex flex-col">
+            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-widest mb-6">Evaluation</h3>
             
-            <div class="space-y-8">
-              <div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5">Score 0-5: negative to eye_imaging</p>
-                <div class="flex gap-3">
-                  <button v-for="n in [5,4,3,2,1,0]" :key="n"
-                    @click="confidence = n"
-                    :class="[
-                      'flex-1 h-16 rounded-lg text-xl font-black transition-all border-2',
-                      confidence === n ? 'border-black ring-2 ring-black/10' : 'border-transparent',
-                      n >= 3 ? (confidence === n ? 'bg-[#00897b] text-white' : 'bg-[#e0f2f1] text-[#00897b]') 
-                             : (confidence === n ? 'bg-[#c62828] text-white' : 'bg-[#ffebee] text-[#c62828]')
-                    ]"
-                  >
-                    {{ n }}
-                  </button>
-                </div>
-              </div>
+            <div class="flex flex-col gap-2.5 mb-8">
+              <button @click="confidence = 'yes'"
+                :class="[
+                  'flex items-center justify-between px-4 py-3.5 rounded-lg border transition-all',
+                  confidence === 'yes' ? 'border-[#00897b] bg-[#e0f2f1] text-[#00897b] ring-1 ring-[#00897b]' : 'border-slate-200 hover:border-slate-300'
+                ]">
+                <span class="font-bold text-sm uppercase tracking-wide">Yes</span>
+                <span class="text-[10px] opacity-60 font-semibold italic">This is eye imaging data</span>
+              </button>
 
-              <div :class="[
-                'p-6 rounded-xl border text-lg transition-colors min-h-[100px] flex items-center justify-center',
-                confidence === null ? 'bg-slate-50 border-slate-100 text-slate-400' : 
-                confidence >= 3 ? 'bg-[#e0f2f1] border-[#b2dfdb] text-[#004d40]' : 'bg-[#ffebee] border-[#ffcdd2] text-[#b71c1c]'
-              ]">
-                <div v-if="confidence !== null" class="w-full">
-                  <p class="text-xs font-bold uppercase tracking-widest opacity-60 mb-2">Guideline</p>
-                  <p class="font-bold leading-tight">
-                    {{ 
-                      confidence === 5 ? 'Certain Eye Imaging: Unambiguous ophthalmic imaging dataset' : 
-                      confidence === 4 ? 'Likely Eye Imaging: Strong evidence of eye imaging, minor doubt' : 
-                      confidence === 3 ? 'Possible Eye Imaging: Reasonable but uncertain' :
-                      confidence === 2 ? 'Unlikely Eye Imaging: Significant doubt, sparse metadata' :
-                      confidence === 1 ? 'Likely Not Related: Probably not eye imaging' :
-                      'Certain Not Related: Clearly not related to eye imaging'
-                    }}
-                  </p>
-                </div>
-                <p v-else class="text-sm font-bold text-center uppercase tracking-widest">Select a score</p>
-              </div>
+              <button @click="confidence = 'no'"
+                :class="[
+                  'flex items-center justify-between px-4 py-3.5 rounded-lg border transition-all',
+                  confidence === 'no' ? 'border-[#c62828] bg-[#ffebee] text-[#c62828] ring-1 ring-[#c62828]' : 'border-slate-200 hover:border-slate-300'
+                ]">
+                <span class="font-bold text-sm uppercase tracking-wide">No</span>
+                <span class="text-[10px] opacity-60 font-semibold italic">This is not eye imaging data</span>
+              </button>
 
-              <div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 text-left">OPTIONAL COMMENT</p>
-                <UTextarea v-model="comment" placeholder="Add any comments here..." class="w-full text-lg" :rows="4" />
-              </div>
+              <button @click="confidence = 'maybe'"
+                :class="[
+                  'flex items-center justify-between px-4 py-3.5 rounded-lg border transition-all',
+                  confidence === 'maybe' ? 'border-slate-800 bg-slate-100 text-slate-800 ring-1 ring-slate-800' : 'border-slate-200 hover:border-slate-300'
+                ]">
+                <span class="font-bold text-sm uppercase tracking-wide">I cannot tell</span>
+                <span class="text-[10px] opacity-60 font-semibold italic">Metadata is insufficient to determine</span>
+              </button>
+            </div>
+
+            <div class="mt-auto">
+              <div class="text-[10px] font-bold text-[#00897b] uppercase tracking-widest mb-2">Optional Comments</div>
+              <UTextarea v-model="comment" placeholder="" :rows="4" class="w-full" />
             </div>
           </div>
 
-          <div class="border-t border-slate-200 flex h-20">
-            <button @click="goNext" :disabled="!canSubmit" class="flex-1 font-bold text-xl text-slate-700 hover:bg-slate-50 disabled:opacity-30 transition-colors">
-              Submit & Next
+          <div class="p-8 pt-0 mt-auto flex gap-3">
+            <button 
+              v-if="index > 0"
+              type="button"
+              @click="goBack" 
+              :disabled="submitting"
+              class="flex-1 py-4 rounded-lg font-bold text-sm uppercase tracking-widest border border-slate-200 text-slate-500 hover:bg-slate-50 transition-all disabled:opacity-30"
+            >
+              Back
+            </button>
+
+            <button 
+              type="button"
+              @click="goNext" 
+              :disabled="!canSubmit || submitting" 
+              class="flex-[2] py-4 rounded-lg font-bold text-sm uppercase tracking-widest transition-all shadow-sm disabled:opacity-30"
+              :class="canSubmit 
+                ? 'bg-[#00897b] text-white hover:bg-[#00796b]' 
+                : 'bg-slate-100 text-slate-400 cursor-not-allowed'"
+            >
+              <span v-if="submitting">Processing...</span>
+              <span v-else>Submit & Next</span>
             </button>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { PrismaClient } from '../shared/generated/client.js';
-import { PrismaPg } from '@prisma/adapter-pg'; // You likely have this installed
+import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -12,46 +12,65 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 
-// 2. Initialize the client using the adapter as shown in your code's @example
+// 2. Initialize the client
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const jsonPath = path.join(__dirname, 'expert_validation_356_records.json');
-  const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-
-  console.log(`🚀 Found ${data.length} records. Syncing to database...`);
-
-  for (const item of data) {
-    await prisma.dataset.upsert({
-      where: { id: String(item.id) },
-      update: {
-        url: item.url || null, // Update if it exists
-      },
-      create: {
-        id: String(item.id),
-        title: item.title || "Untitled",
-        description: item.description || "",
-        url: item.url || null,
-        keywords: item.keywords 
-          ? (Array.isArray(item.keywords) ? item.keywords : item.keywords.split(',').map((k: string) => k.trim())) 
-          : [],
-        fileExtensions: item.file_types || [],
-        authorAffiliation: item.source_id || "Unknown",
-        sourceReposityId: item.source || "Unknown",
-        evaluationCount: 0,
-      },
-    });
+  
+  if (!fs.existsSync(jsonPath)) {
+    throw new Error(`JSON file not found at: ${jsonPath}`);
   }
 
-  console.log("✅ Success! 356 records are now in the Dataset table.");
+  const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+
+  console.log("🧹 Step 1: Cleaning existing data...");
+  
+  // We use a transaction to ensure all-or-nothing cleanup
+  // Order is critical: Delete relations (child) before main records (parent)
+  await prisma.$transaction([
+    prisma.assignment.deleteMany({}),
+    prisma.evaluation.deleteMany({}),
+    prisma.dataset.deleteMany({}),
+  ]);
+
+  console.log("✨ Database wiped clean.");
+  console.log(`🚀 Step 2: Seeding ${data.length} records...`);
+
+  // Using a for-of loop for sequential, stable insertion
+  for (const item of data) {
+    try {
+      await prisma.dataset.create({
+        data: {
+          id: String(item.id),
+          title: item.title || "Untitled",
+          description: item.description || "",
+          url: item.url || null,
+          keywords: item.keywords 
+            ? (Array.isArray(item.keywords) 
+                ? item.keywords 
+                : item.keywords.split(',').map((k: string) => k.trim())) 
+            : [],
+          fileExtensions: item.file_types || [],
+          authorAffiliation: item.source_id || "Unknown",
+          sourceReposityId: item.source || "Unknown",
+          evaluationCount: 0, // Ensure counter starts at zero
+        },
+      });
+    } catch (err) {
+      console.error(`❌ Failed to insert record ID ${item.id}:`, err);
+    }
+  }
+
+  console.log("✅ Success! Database is fresh and ready for survey assignments.");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Seed failed:", e);
+    console.error("❌ Global Seed Error:", e);
     process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
-    await pool.end(); // Clean up the pg pool
+    await pool.end();
   });
