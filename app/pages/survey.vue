@@ -5,6 +5,31 @@ useSeoMeta({ title: "Survey" });
 const route = useRoute();
 const toast = process.client ? useToast() : null;
 
+const cleanKeywords = (rawKeywords: any): string[] => {
+  if (!rawKeywords) return [];
+  
+  // 1. Convert to string and fix those broken HTML entities
+  let text = String(rawKeywords)
+    .replace(/&#\s*\d+\s*;?/g, '') // Completely remove all &# numbers
+    .replace(/[<>]/g, '');         // Remove all brackets
+
+  // 2. Split by commas
+  return text.split(',')
+    .map(k => k.trim())
+    .filter(k => {
+      // THE AGGRESSIVE FILTER:
+      // Remove if it's just a number
+      if (/^\d+$/.test(k)) return false;
+      
+      // Remove if it contains common "scientific noise" words
+      const noise = ['test whether', 'differences', 'participants', 'control'];
+      if (noise.some(word => k.toLowerCase().includes(word))) return false;
+
+      // Remove if it's too short
+      return k.length > 2;
+    });
+};
+
 // --- Data Fetching ---
 const { data, refresh } = await useFetch("/api/dataset", {
   default: () => ({ datasets: [], evaluations: {}, total: 0 }),
@@ -41,7 +66,7 @@ const normalizedDataset = computed(() => {
   if (!dataset.value) return null;
   return {
     ...dataset.value,
-    keywords: Array.isArray(dataset.value.keywords) ? dataset.value.keywords : [],
+    keywords: cleanKeywords(dataset.value.keywords),
     fileExtensions: Array.isArray(dataset.value.fileExtensions) ? dataset.value.fileExtensions : [],
   };
 });
@@ -186,7 +211,7 @@ const goNext = () => submitAndNavigate(index.value + 1);
               </section>
 
               <section v-if="normalizedDataset.fileExtensions?.length">
-                <div class="text-[10px] font-bold text-[#00897b] uppercase tracking-widest mb-1.5">Technical Assets</div>
+                <div class="text-[10px] font-bold text-[#00897b] uppercase tracking-widest mb-1.5">File Types</div>
                 <div class="text-sm font-mono text-slate-500">{{ normalizedDataset.fileExtensions.join(', ') }}</div>
               </section>
             </div>
