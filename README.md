@@ -1,4 +1,4 @@
-# Nuxt Starter
+# Envision Survey
 
 ## Getting started
 
@@ -6,23 +6,23 @@
 
 You will need the following installed on your system:
 
-- Node.js
-- Yarn
+- mise
 - Docker
-- Volta (optional)
 
 ### Setup
 
 1. Clone the repository
 
    ```bash
-   git clone https://github.com/fairdataihub/nuxt-starter.git
+   git clone https://github.com/eyeact/envision-survey.git
    ```
 
 2. Install the dependencies
 
    ```bash
-   yarn install
+   mise trust # only needed the first time you use mise
+   mise install
+   pnpm install
    ```
 
 3. Add your environment variables. An example is provided at `.env.example`
@@ -34,7 +34,7 @@ You will need the following installed on your system:
 4. Start the development server
 
    ```bash
-   yarn dev
+   pnpm dev
    ```
 
 5. Open the application in your browser
@@ -50,19 +50,27 @@ You will need the following installed on your system:
 The application uses a PostgreSQL database for storing data. You can use Docker to run these services locally.
 
 ```bash
-docker-compose -f ./dev-docker-compose.yaml up
-docker-compose -f ./dev-docker-compose.yaml up -d # if you want the db to run in the background
+docker compose -f ./dev-docker-compose.yaml up
+docker compose -f ./dev-docker-compose.yaml up -d # if you want the db to run in the background
 ```
 
 Close the database with:
 
 ```bash
-docker-compose -f ./dev-docker-compose.yaml down
+docker compose -f ./dev-docker-compose.yaml down
 ```
 
 ### Prisma
 
 The application uses Prisma to interact with the database.
+
+Common commands:
+
+```bash
+pnpm prisma:generate
+pnpm prisma:migrate:dev
+pnpm prisma:studio
+```
 
 ### UI
 
