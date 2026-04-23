@@ -49,6 +49,17 @@ const footerItems: NavigationMenuItem[] = [
 
         <AuthState v-slot="{ loggedIn }">
           <UButton
+            v-if="$route.path !== '/survey'"
+            to="/survey"
+            color="primary"
+            class="!bg-[#00897b] hover:!bg-[#00796b]"
+          >
+            Start Reviewing
+            <template #trailing>
+              <UIcon name="i-heroicons-arrow-right-20-solid" class="w-5 h-5" />
+            </template>
+          </UButton>
+          <UButton
             v-if="loggedIn"
             color="neutral"
             variant="outline"

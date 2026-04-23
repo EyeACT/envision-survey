@@ -1,99 +1,163 @@
 <script setup lang="ts">
 definePageMeta({ middleware: ["auth"] });
-useSeoMeta({ title: "Reviewer Background" });
+useSeoMeta({ title: "Professional Profile | ENVISION" });
 
 const state = reactive({
   careerLevel: '',
+  otherCareer: '',
   primaryBackground: '',
-  imagingFamiliarity: ''
+  otherBackground: '',
+  imagingFamiliarity: null as number | null,
+  experienceYears: ''
 });
 
-const loading = ref(false);
-const toast = useToast();
+const careerItems = [
+  { value: 'Undergraduate student', label: 'Undergraduate student' },
+  { value: 'Graduate student', label: 'Graduate student' },
+  { value: 'Postdoctoral researcher / clinical fellow', label: 'Postdoctoral researcher / clinical fellow' },
+  { value: 'Resident', label: 'Resident' },
+  { value: 'Early-career', label: 'Early-career' },
+  { value: 'Mid-career', label: 'Mid-career' },
+  { value: 'Senior / Principal Investigator', label: 'Senior / Principal Investigator' },
+  { value: 'Industry professional', label: 'Industry professional' },
+  { value: 'Other', label: 'Other' }
+];
 
-const canSubmit = computed(() => 
-  state.careerLevel.trim() && 
-  state.primaryBackground.trim() && 
-  state.imagingFamiliarity.trim()
-);
+const backgroundItems = [
+  { value: 'Ophthalmology (clinical)', label: 'Ophthalmology (clinical)' },
+  { value: 'Optometry (clinical)', label: 'Optometry (clinical)' },
+  { value: 'Vision science / Visual Neuroscience', label: 'Vision science / Visual Neuroscience' },
+  { value: 'Biomedical / Clinical Informatics', label: 'Biomedical / Clinical Informatics' },
+  { value: 'Computer Science / Machine Learning / AI', label: 'Computer Science / Machine Learning / AI' },
+  { value: 'Biomedical / Imaging Engineering', label: 'Biomedical / Imaging Engineering' },
+  { value: 'Bioinformatics / Computational Biology', label: 'Bioinformatics / Computational Biology' },
+  { value: 'Health Data Science / Epidemiology', label: 'Health Data Science / Epidemiology' },
+  { value: 'Other', label: 'Other' }
+];
+
+const experienceItems = [
+  { value: '0-2 years', label: '0-2 years' },
+  { value: '2-5 years', label: '2-5 years' },
+  { value: '5-10 years', label: '5-10 years' },
+  { value: '10-20 years', label: '10-20 years' },
+  { value: '20+ years', label: '20+ years' }
+];
+
+const familiarityItems = [
+  { value: 0, label: 'None', description: 'No prior exposure' },
+  { value: 1, label: 'Basic', description: 'General awareness' },
+  { value: 2, label: 'Working', description: 'Used in research/coursework' },
+  { value: 3, label: 'Substantial', description: 'Regular part of work' },
+  { value: 4, label: 'Expert', description: 'Primary focus/Publish in field' }
+];
+
+const radioCustomUi = {
+  item: {
+    base: 'border border-slate-200 p-3.5 rounded-xl cursor-pointer hover:border-slate-300 hover:bg-slate-50 transition-all flex flex-col justify-center min-h-[58px]',
+    active: 'border-[#00897b] bg-[#e0f2f1] text-[#00897b] ring-1 ring-[#00897b]'
+  },
+  label: 'text-slate-900 font-bold text-sm tracking-tight', 
+  description: 'text-slate-500 text-[10px] font-semibold italic mt-0.5'
+};
+
+const canSubmit = computed(() => {
+  const isCareerValid = state.careerLevel === 'Other' ? state.otherCareer.trim() !== '' : !!state.careerLevel;
+  const isBackgroundValid = state.primaryBackground === 'Other' ? state.otherBackground.trim() !== '' : !!state.primaryBackground;
+  return isCareerValid && isBackgroundValid && !!state.experienceYears && state.imagingFamiliarity !== null;
+});
 
 async function onSubmit() {
-  loading.value = true;
+  const selectedFam = familiarityItems.find(i => i.value === state.imagingFamiliarity);
+  const payload = {
+    careerLevel: state.careerLevel === 'Other' ? state.otherCareer : state.careerLevel,
+    primaryBackground: state.primaryBackground === 'Other' ? state.otherBackground : state.primaryBackground,
+    imagingFamiliarity: `${selectedFam?.label}: ${selectedFam?.description}`,
+    imagingFamiliarityScore: state.imagingFamiliarity,
+    experienceYears: state.experienceYears
+  };
+
   try {
-    await $fetch('/api/user/background', {
-      method: 'POST',
-      body: state
-    });
+    await $fetch('/api/user/background', { method: 'POST', body: payload });
     await navigateTo('/survey');
   } catch (err) {
-    toast.add({ title: 'Error saving profile', color: 'red' });
-  } finally {
-    loading.value = false;
+    console.error("Save error", err);
   }
 }
 </script>
 
 <template>
   <div class="min-h-screen bg-white font-sans antialiased text-slate-900">
-    <header class="border-b border-slate-200 bg-white px-6 py-3 sticky top-0 z-30">
-      <div class="mx-auto max-w-[1400px] flex items-center justify-between">
-        <div class="flex items-center gap-4">
-          <div class="h-9 w-9 flex items-center justify-center rounded bg-slate-800 text-white font-bold text-sm">
-            <UIcon name="i-heroicons-user" class="w-5 h-5" />
-          </div>
-          <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Initial Onboarding</p>
+    <main class="mx-auto max-w-[1500px] px-6 py-12">
+      <div class="w-full border border-slate-200 rounded-xl shadow-sm bg-white overflow-hidden flex flex-col">
+        
+        <div class="px-10 py-8 border-b border-slate-100 bg-white">
+          <h1 class="text-2xl font-bold text-slate-800 tracking-tight leading-tight">Professional Profile</h1>
+          <p class="text-slate-600 text-[13px] leading-relaxed mt-1">Please provide your background details to personalize your survey experience.</p>
         </div>
-      </div>
-    </header>
 
-    <main class="mx-auto max-w-[1000px] px-6 py-12">
-
-      <div class="border border-slate-200 rounded-2xl shadow-sm bg-white overflow-hidden">
-        <div class="p-10 space-y-8">
-          <h3 class="text-sm font-bold text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-4">
-            Professional Profile
-          </h3>
-          
-          <div class="space-y-8">
-            <div>
-              <label class="text-[10px] font-bold text-[#00897b] uppercase tracking-widest mb-2 block">Career Level</label>
-              <UInput 
-                v-model="state.careerLevel" 
-                placeholder="e.g., student, postdoc, faculty, clinician, other..." 
-                size="xl" 
-                variant="outline"
-                class="w-full"
-              />
+        <div class="p-10 space-y-10">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            
+            <div class="col-span-1 lg:col-span-3">
+              <UFormField>
+                <template #label>
+                  <div class="flex items-center gap-2 mb-4">
+                    <span class="text-[10px] font-bold text-[#00897b] uppercase tracking-widest">01. Career Level</span>
+                    <span class="text-red-500 font-bold">*</span>
+                  </div>
+                </template>
+                <URadioGroup v-model="state.careerLevel" :items="careerItems" :ui="radioCustomUi" class="space-y-2.5" />
+                <UInput v-if="state.careerLevel === 'Other'" v-model="state.otherCareer" placeholder="Specify..." class="mt-3" size="sm" />
+              </UFormField>
             </div>
 
-            <div>
-              <label class="text-[10px] font-bold text-[#00897b] uppercase tracking-widest mb-2 block">Primary Background</label>
-              <UInput 
-                v-model="state.primaryBackground" 
-                placeholder="e.g., research, clinical, both..." 
-                size="xl" 
-                variant="outline"
-                class="w-full"
-              />
+            <div class="col-span-1 lg:col-span-3">
+              <UFormField>
+                <template #label>
+                  <div class="flex items-center gap-2 mb-4">
+                    <span class="text-[10px] font-bold text-[#00897b] uppercase tracking-widest">02. Primary Background</span>
+                    <span class="text-red-500 font-bold">*</span>
+                  </div>
+                </template>
+                <URadioGroup v-model="state.primaryBackground" :items="backgroundItems" :ui="radioCustomUi" class="space-y-2.5" />
+                <UInput v-if="state.primaryBackground === 'Other'" v-model="state.otherBackground" placeholder="Specify..." class="mt-3" size="sm" />
+              </UFormField>
             </div>
 
-            <div>
-              <label class="text-[10px] font-bold text-[#00897b] uppercase tracking-widest mb-2 block">Familiarity with ophthalmic imaging data</label>
-              <UInput 
-                v-model="state.imagingFamiliarity" 
-                placeholder="e.g., none, some, regular..." 
-                size="xl" 
-                variant="outline"
-                class="w-full"
-              />
+            <div class="col-span-1 lg:col-span-3">
+              <UFormField>
+                <template #label>
+                  <div class="flex items-center gap-2 mb-4">
+                    <span class="text-[10px] font-bold text-[#00897b] uppercase tracking-widest">03. Experience</span>
+                    <span class="text-red-500 font-bold">*</span>
+                  </div>
+                </template>
+                <URadioGroup v-model="state.experienceYears" :items="experienceItems" :ui="radioCustomUi" class="space-y-2.5" />
+              </UFormField>
+            </div>
+
+            <div class="col-span-1 lg:col-span-3">
+              <UFormField>
+                <template #label>
+                  <div class="flex items-center gap-2 mb-4">
+                    <span class="text-[10px] font-bold text-[#00897b] uppercase tracking-widest">04. Imaging Familiarity</span>
+                    <span class="text-red-500 font-bold">*</span>
+                  </div>
+                </template>
+                <URadioGroup v-model="state.imagingFamiliarity" :items="familiarityItems" :ui="radioCustomUi" class="space-y-2.5" />
+              </UFormField>
             </div>
           </div>
 
-          <div class="pt-6">
-            <button @click="onSubmit" :disabled="!canSubmit || loading" 
-              class="w-full py-4 rounded-xl font-bold text-sm uppercase tracking-widest transition-all disabled:opacity-30"
-              :class="canSubmit ? 'bg-slate-800 text-white shadow-md hover:bg-slate-900' : 'bg-slate-100 text-slate-400'">
-              {{ loading ? 'Saving Profile...' : 'Complete & Start Survey' }}
+          <div class="pt-8 border-t border-slate-100 flex items-center justify-end bg-slate-50/50 -mx-10 -mb-10 p-10">
+            <button 
+              type="button"
+              @click="onSubmit" 
+              :disabled="!canSubmit" 
+              class="px-16 py-4 rounded-lg font-bold text-sm uppercase tracking-widest transition-all shadow-sm"
+              :class="canSubmit ? 'bg-[#00897b] text-white hover:bg-[#00796b]' : 'bg-slate-100 text-slate-400 cursor-not-allowed'"
+            >
+              Start Survey
             </button>
           </div>
         </div>
