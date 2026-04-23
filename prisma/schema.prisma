@@ -22,9 +22,11 @@ model User {
   updated     DateTime     @updatedAt
 
   // New Background Fields
-  careerLevel      String?  
-  primaryBackground String?  
-  imagingFamiliarity String? 
+  careerLevel            String?  
+  primaryBackground      String?  
+  imagingFamiliarity     String? 
+  imagingFamiliarityScore Int?
+  experienceYears String?
 
   evaluations Evaluation[]
 }
@@ -40,7 +42,6 @@ model Dataset {
   authorAffiliation String
   sourceReposityId  String
   
-  // Logic fields
   evaluationCount   Int          @default(0)
   
   created           DateTime     @default(now())

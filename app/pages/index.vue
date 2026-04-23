@@ -1,14 +1,12 @@
 <script setup lang="ts">
-definePageMeta({ middleware: ["auth"] });
+
 useSeoMeta({
-  title: "ENVISION | Expert Validation Survey",
+  title: "ENVISION | Eye Imaging Dataset Classification Survey",
 });
 
-// Fetch the user's current profile status
 const { data: userProfile } = await useFetch('/api/user/me');
 
 const handleBeginClick = async () => {
-  // Check if the required background fields are filled
   if (userProfile.value?.careerLevel) {
     await navigateTo('/survey');
   } else {
@@ -16,77 +14,117 @@ const handleBeginClick = async () => {
   }
 };
 
-const guidelines = ref([
+const workflowSteps = [
   {
-    title: "Project Background",
-    description: "ENVISION is a NIH-funded initiative to curate the world's eye imaging data. We've processed 4,700+ records; your review provides the 'ground truth' to validate our AI classifier.",
-    icon: "i-lucide-microscope",
+    title: "Generate a Reviewer ID",
+    description: "Choose Start Reviewing to create an anonymous ID. Keep this ID to continue later on any device."
   },
   {
-    title: "Your Task",
-    description: "Review metadata for clinical records and rate your confidence that it contains imaging (OCT, Fundus, etc.). Each record takes 1–3 minutes.",
-    icon: "i-lucide-clipboard-check",
+    title: "Review each record",
+    description: "On the survey page, inspect the metadata and answer whether it describes an eye imaging dataset."
   },
   {
-    title: "Save & Resume",
-    description: "Your progress is linked to your Expert ID. You can close this window at any time and resume exactly where you left off by logging back in.",
-    icon: "i-lucide-save",
-  },
-]);
+    title: "Submit and continue",
+    description: "Clicking Yes, No, or I cannot tell saves your response and moves to the next record automatically."
+  }
+];
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50 font-sans antialiased text-slate-900">
-
-    <main class="max-w-4xl mx-auto px-6 py-12">
-      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mb-4">
-        <div class="p-10 border-b border-slate-50">
-          <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight mb-4">
-            Survey
-          </h1>
-          <p class="text-lg text-slate-600 leading-relaxed max-w-2xl">
-            Thank you for participating in the ENVISION project. This survey collects independent ground-truth labels to measure classifier performance and identify systematic errors in ophthalmic data curation.
-          </p>
+  <div class="min-h-screen bg-slate-50 font-sans antialiased text-slate-900 pb-20">
+    <main class="max-w-4xl mx-auto px-6 py-16">
+      
+      <div class="text-center mb-16">
+        <p class="text-[10px] font-bold text-[#00897b] uppercase tracking-[0.2em] mb-3">Reviewer Guide</p>
+        <h1 class="text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-8">
+          Eye Imaging Dataset Classification Survey
+        </h1>
+        <div class="flex justify-center">
+          <UButton
+            @click="handleBeginClick"
+            size="xl"
+            label="Start Reviewing"
+            icon="i-lucide-play"
+            class="!rounded-xl !px-12 !py-4 !bg-[#00897b] hover:!bg-[#00796b] !shadow-xl !shadow-[#00897b]/20 transition-all transform hover:scale-105"
+          />
         </div>
+      </div>
 
-        <div class="p-10 bg-slate-50/50">
-          <div class="flex flex-col sm:flex-row items-center gap-6">
-            <UButton
-              @click="handleBeginClick"
-              size="xl"
-              label="Begin Survey Task"
-              icon="i-lucide-play"
-              class="!rounded-xl !px-10 !py-4 !bg-[#00897b] hover:!bg-[#00796b] !shadow-lg !shadow-[#00897b]/20"
-            />
-            <div class="text-sm text-slate-500 font-medium">
-              Total estimated time: ~2–5 hours
+      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-10 md:p-12 mb-10 space-y-6">
+        <p class="text-[15px] leading-relaxed text-slate-600">
+          Thank you for taking the time to participate in this survey. We truly appreciate your contribution.
+        </p>
+        <p class="text-[15px] leading-relaxed text-slate-600">
+          This survey is being conducted as part of the development of the Envision Portal, a platform aimed at improving the discoverability and reuse of eye imaging data. This work is carried out by the FAIR Data Innovations Hub.
+        </p>
+        <p class="text-[15px] leading-relaxed text-slate-600">
+          The purpose of this survey is to conduct human review of records to determine whether they describe an eye imaging dataset or not. The results will support the development of an AI model that performs this classification automatically from text metadata and will be used to identify true eye imaging datasets from mislabeled records (papers, tables, software, unrelated datasets, etc.) before they are indexed in the Envision Portal.
+        </p>
+        <p class="text-[15px] leading-relaxed text-slate-600">
+          Although you can complete the survey at any time, we would appreciate it if you could complete at least 100 evaluations (or more, if you can; there are 356 evaluations in total). You will be provided with a Reviewer ID when you first start, and you can use it to come back to the survey at any time, including from a different device, and continue where you left off.
+        </p>
+        <p class="text-[15px] leading-relaxed text-slate-600">
+          Please note that this survey is completely anonymous. We do not collect any personal identifiable information. Each respondent is assigned a random unique ID, which allows us to compute aggregate statistics when reporting results in future publications.
+        </p>
+        <p class="text-[15px] leading-relaxed text-slate-600">
+          If you have any questions, feedback, or would like to learn more about this work, please feel free to reach out at <a href="mailto:bpatel@calmi2.org" class="text-[#00897b] font-bold hover:underline">bpatel@calmi2.org</a>.
+        </p>
+      </div>
+
+      <div class="bg-[#e0f2f1] border border-[#b2dfdb] rounded-2xl p-10 text-center mb-10 shadow-sm">
+        <h2 class="text-xl font-bold text-slate-900 mb-3">Before You Begin</h2>
+        <p class="text-[15px] text-slate-700 max-w-2xl mx-auto leading-relaxed">
+          You can start fresh with a new Reviewer ID or resume with an existing one. The survey asks the same core question for each record: Does this record describe an eye imaging dataset?
+        </p>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Review Workflow</h2>
+            <p class="text-xs text-slate-500">Follow these steps to complete your session.</p>
+          </div>
+          <UIcon name="i-lucide-list-checks" class="w-5 h-5 text-slate-300" />
+        </div>
+        
+        <div class="p-8 space-y-6">
+          <div v-for="(step, i) in workflowSteps" :key="i" class="flex gap-5 group">
+            <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-slate-100 text-[#00897b] flex items-center justify-center text-xs font-black transition-colors group-hover:bg-[#00897b] group-hover:text-white">
+              {{ i + 1 }}
+            </div>
+            
+            <div class="flex-1">
+              <h3 class="text-sm font-bold text-slate-900 mb-1">{{ step.title }}</h3>
+              <p class="text-sm text-slate-500 leading-relaxed">
+                {{ step.description }}
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="grid md:grid-cols-3 gap-6 mb-4">
-        <div v-for="(item, i) in guidelines" :key="i" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-          <div class="w-10 h-10 bg-[#e0f2f1] text-[#00897b] rounded-lg flex items-center justify-center mb-4">
-            <UIcon :name="item.icon" class="w-6 h-6" />
-          </div>
-          <h3 class="font-bold text-slate-900 mb-2">{{ item.title }}</h3>
-          <p class="text-xs text-slate-500 leading-relaxed">{{ item.description }}</p>
-        </div>
-      </div>
-
-      <footer class="flex flex-col md:flex-row justify-between items-center gap-6 py-10 border-t border-slate-200">
+      <footer class="flex flex-col md:flex-row justify-between items-center gap-6 py-12 mt-12 border-t border-slate-200">
         <div class="text-sm text-slate-500">
-          Questions or technical issues? Contact <span class="font-bold text-slate-700">James O’Neill</span>
+          Questions or technical issues? Contact by sending email to
         </div>
-        <div class="flex gap-4">
+        <div class="flex flex-wrap justify-center gap-4">
           <UButton
-            label="Email Support"
+            label="James O'Neill"
             to="mailto:joneill@calmi2.org"
             variant="ghost"
             icon="i-lucide-mail"
             color="gray"
             size="xs"
+            class="hover:text-[#00897b]"
+          />
+          <UButton
+            label="Bhavesh Patel"
+            to="mailto:bPatel@calmi2.org"
+            variant="ghost"
+            icon="i-lucide-mail"
+            color="gray"
+            size="xs"
+            class="hover:text-[#00897b]"
           />
         </div>
       </footer>
