@@ -7,18 +7,19 @@ const toast = process.client ? useToast() : null;
 
 const cleanKeywords = (rawKeywords: any): string[] => {
   if (!rawKeywords) return [];
-  
-  let text = String(rawKeywords)
-    .replace(/&#\s*\d+\s*;?/g, '') 
-    .replace(/[<>]/g, '');         
 
-  return text.split(',')
-    .map(k => k.trim())
-    .filter(k => {
+  let text = String(rawKeywords)
+    .replace(/&#\s*\d+\s*;?/g, "")
+    .replace(/[<>]/g, "");
+
+  return text
+    .split(",")
+    .map((k) => k.trim())
+    .filter((k) => {
       if (/^\d+$/.test(k)) return false;
-      
-      const noise = ['test whether', 'differences', 'participants', 'control'];
-      if (noise.some(word => k.toLowerCase().includes(word))) return false;
+
+      const noise = ["test whether", "differences", "participants", "control"];
+      if (noise.some((word) => k.toLowerCase().includes(word))) return false;
 
       return k.length > 2;
     });
@@ -31,13 +32,13 @@ const { data, refresh } = await useFetch("/api/dataset", {
       const datasets = response._data.datasets;
       const evals = response._data.evaluations;
 
-      const firstPendingIndex = datasets.findIndex(d => !evals[d.id]);
+      const firstPendingIndex = datasets.findIndex((d) => !evals[d.id]);
 
       if (firstPendingIndex !== -1 && firstPendingIndex !== 0) {
         navigateTo({ query: { index: firstPendingIndex } });
       }
     }
-  }
+  },
 });
 
 const datasets = computed(() => data.value?.datasets ?? []);
@@ -56,12 +57,14 @@ const normalizedDataset = computed(() => {
   return {
     ...dataset.value,
     keywords: cleanKeywords(dataset.value.keywords),
-    fileExtensions: Array.isArray(dataset.value.fileExtensions) ? dataset.value.fileExtensions : [],
+    fileExtensions: Array.isArray(dataset.value.fileExtensions)
+      ? dataset.value.fileExtensions
+      : [],
   };
 });
 
 const progress = computed(() =>
-  total.value > 0 ? Math.round(((index.value + 1) / total.value) * 100) : 0
+  total.value > 0 ? Math.round(((index.value + 1) / total.value) * 100) : 0,
 );
 
 const confidence = ref<"yes" | "no" | "maybe" | null>(null);
@@ -69,22 +72,26 @@ const comment = ref("");
 const submitting = ref(false);
 const canSubmit = computed(() => confidence.value !== null);
 
-watch(dataset, (newVal) => {
-  if (!newVal) return;
+watch(
+  dataset,
+  (newVal) => {
+    if (!newVal) return;
 
-  const existing = evaluations.value[newVal.id];
-  
-  if (existing) {
-    if (existing.confidence === 5) confidence.value = 'yes';
-    else if (existing.confidence === 0) confidence.value = 'no';
-    else if (existing.confidence === 3) confidence.value = 'maybe';
-    
-    comment.value = existing.comment ?? "";
-  } else {
-    confidence.value = null;
-    comment.value = "";
-  }
-}, { immediate: true });
+    const existing = evaluations.value[newVal.id];
+
+    if (existing) {
+      if (existing.confidence === 5) confidence.value = "yes";
+      else if (existing.confidence === 0) confidence.value = "no";
+      else if (existing.confidence === 3) confidence.value = "maybe";
+
+      comment.value = existing.comment ?? "";
+    } else {
+      confidence.value = null;
+      comment.value = "";
+    }
+  },
+  { immediate: true },
+);
 
 const isExpanded = ref(false);
 const isTruncated = ref(false);
@@ -92,7 +99,8 @@ const descriptionRef = ref<HTMLElement | null>(null);
 
 const updateTruncation = () => {
   if (descriptionRef.value) {
-    isTruncated.value = descriptionRef.value.scrollHeight > descriptionRef.value.clientHeight;
+    isTruncated.value =
+      descriptionRef.value.scrollHeight > descriptionRef.value.clientHeight;
   }
 };
 
@@ -104,11 +112,11 @@ watch(dataset, async () => {
 
 onMounted(() => {
   updateTruncation();
-  window.addEventListener('resize', updateTruncation);
+  window.addEventListener("resize", updateTruncation);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', updateTruncation);
+  window.removeEventListener("resize", updateTruncation);
 });
 
 const goBack = async () => {
@@ -128,7 +136,7 @@ const submitAndNavigate = async (nextIndex: number) => {
   const scoreMapping = {
     yes: { score: 5, label: "eye-imaging" },
     no: { score: 0, label: "non-eye-imaging" },
-    maybe: { score: 3, label: "possible-eye-imaging" }
+    maybe: { score: 3, label: "possible-eye-imaging" },
   };
 
   try {
@@ -141,7 +149,7 @@ const submitAndNavigate = async (nextIndex: number) => {
         datasetId: currentId,
         confidence: score,
         comment: currentComment || null,
-        label: label
+        label: label,
       },
     });
 
@@ -150,7 +158,7 @@ const submitAndNavigate = async (nextIndex: number) => {
         datasetId: currentId,
         confidence: score,
         label: label,
-        comment: currentComment
+        comment: currentComment,
       };
     }
 
@@ -171,163 +179,254 @@ const goNext = () => submitAndNavigate(index.value + 1);
 </script>
 
 <template>
-  <div class="min-h-screen bg-white font-sans antialiased text-slate-900">
-    <header class="border-slate-200 bg-white px-6 py-6 sticky top-0 z-30">
-      <div class="mx-auto max-w-[800px] flex flex-col items-center gap-3">
-        
-        <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden shadow-sm">
-          <div 
-            class="h-full bg-[#00897b] transition-all duration-500 ease-out" 
+  <div class="min-h-screen bg-white font-sans text-slate-900 antialiased">
+    <header class="sticky top-0 z-30 border-slate-200 bg-white px-6 py-6">
+      <div class="mx-auto flex max-w-[800px] flex-col items-center gap-3">
+        <div
+          class="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 shadow-sm"
+        >
+          <div
+            class="h-full bg-[#00897b] transition-all duration-500 ease-out"
             :style="{ width: `${progress}%` }"
           ></div>
         </div>
 
-        <div class="flex items-center justify-between w-full px-1">
+        <div class="flex w-full items-center justify-between px-1">
           <div class="flex items-center gap-1.5">
-            <span class="text-[12px] font-black text-slate-900 tracking-tight">
+            <span class="text-[12px] font-black tracking-tight text-slate-900">
               {{ index + 1 }}
             </span>
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            <span
+              class="text-[10px] font-bold tracking-widest text-slate-400 uppercase"
+            >
               / {{ total }} Records
             </span>
           </div>
-          
-          <span class="text-[10px] font-black text-[#00897b] uppercase tracking-widest">
+
+          <span
+            class="text-[10px] font-black tracking-widest text-[#00897b] uppercase"
+          >
             {{ progress }}% Complete
           </span>
         </div>
-
       </div>
     </header>
 
     <main class="mx-auto max-w-[1400px] px-6">
-      <div class="mb-6 px-5 py-4 border border-slate-200 rounded-xl bg-slate-50/50 flex items-start gap-4 shadow-sm">
-        <UIcon name="material-symbols:info-outline-rounded" class="w-5 h-5 text-[#00897b] mt-0.5 shrink-0" />
+      <div
+        class="mb-6 flex items-start gap-4 rounded-xl border border-slate-200 bg-slate-50/50 px-5 py-4 shadow-sm"
+      >
+        <UIcon
+          name="material-symbols:info-outline-rounded"
+          class="mt-0.5 h-5 w-5 shrink-0 text-[#00897b]"
+        />
         <div class="text-[13px] leading-relaxed text-slate-600">
-          Please review the Dataset details on the left,
-          then complete the Evaluation on the right. 
-          Select "Submit & Next" to save the record and advance.
+          Please review the Dataset details on the left, then complete the
+          Evaluation on the right. Select "Submit & Next" to save the record and
+          advance.
         </div>
       </div>
 
-      <div v-if="normalizedDataset" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        
-        <div class="lg:col-span-8 border border-slate-200 rounded-xl p-8 shadow-sm flex flex-col bg-white">
-          <h2 class="text-lg mb-6 font-bold">1. Review Dataset Information</h2>
+      <div
+        v-if="normalizedDataset"
+        class="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12"
+      >
+        <div
+          class="flex flex-col rounded-xl border border-slate-200 p-8 shadow-sm lg:col-span-8"
+        >
+          <h2 class="mb-6 text-lg font-bold">1. Review Dataset Information</h2>
           <div class="flex-1 space-y-8">
             <section v-if="normalizedDataset.title">
-              <div class="text-[10px] font-bold text-[#00897b] uppercase tracking-widest mb-1.5">Title</div>
-              <h2 class="text-lg font-semibold text-slate-800 leading-tight tracking-tight">{{ normalizedDataset.title }}</h2>
+              <div
+                class="mb-1.5 text-[10px] font-bold tracking-widest text-[#00897b] uppercase"
+              >
+                Title
+              </div>
+              <h2
+                class="text-lg leading-tight font-semibold tracking-tight text-slate-800"
+              >
+                {{ normalizedDataset.title }}
+              </h2>
             </section>
 
             <section v-if="normalizedDataset.description">
-              <div class="text-[10px] font-bold text-[#00897b] uppercase tracking-widest mb-2">Description</div>
+              <div
+                class="mb-2 text-[10px] font-bold tracking-widest text-[#00897b] uppercase"
+              >
+                Description
+              </div>
 
-              <div 
+              <div
                 ref="descriptionRef"
-                class="text-[15px] text-slate-700 leading-relaxed transition-all duration-300 overflow-hidden"
+                class="overflow-hidden text-[15px] leading-relaxed text-slate-700 transition-all duration-300"
                 :class="{ 'line-clamp-5': !isExpanded }"
               >
                 {{ normalizedDataset.description }}
               </div>
 
               <div v-if="isTruncated || isExpanded" class="mt-3">
-                <button 
+                <button
                   @click="isExpanded = !isExpanded"
-                  class="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-[#00897b] transition-all flex items-center gap-1 group"
+                  class="group flex items-center gap-1 text-[10px] font-bold tracking-widest text-slate-400 uppercase transition-all hover:text-[#00897b]"
                 >
-                  {{ isExpanded ? 'Show Less' : 'Expand All' }}
-                  <UIcon 
-                    :name="isExpanded ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" 
-                    class="w-3 h-3 transition-transform duration-200 group-hover:translate-y-0.5" 
+                  {{ isExpanded ? "Show Less" : "Expand All" }}
+                  <UIcon
+                    :name="
+                      isExpanded
+                        ? 'i-heroicons-chevron-up'
+                        : 'i-heroicons-chevron-down'
+                    "
+                    class="h-3 w-3 transition-transform duration-200 group-hover:translate-y-0.5"
                   />
                 </button>
               </div>
             </section>
 
-            <div class="grid grid-cols-2 gap-8 pt-4 border-t border-slate-100">
+            <div class="grid grid-cols-2 gap-8 border-t border-slate-100 pt-4">
               <section v-if="normalizedDataset.keywords?.length">
-                <div class="text-[10px] font-bold text-[#00897b] uppercase tracking-widest mb-1.5">Identifiers / Keywords</div>
-                <div class="text-sm text-slate-600">{{ normalizedDataset.keywords.join(', ') }}</div>
+                <div
+                  class="mb-1.5 text-[10px] font-bold tracking-widest text-[#00897b] uppercase"
+                >
+                  Identifiers / Keywords
+                </div>
+                <div class="text-sm text-slate-600">
+                  {{ normalizedDataset.keywords.join(", ") }}
+                </div>
               </section>
 
               <section v-if="normalizedDataset.fileExtensions?.length">
-                <div class="text-[10px] font-bold text-[#00897b] uppercase tracking-widest mb-1.5">File Types</div>
-                <div class="text-sm font-mono text-slate-500">{{ normalizedDataset.fileExtensions.join(', ') }}</div>
+                <div
+                  class="mb-1.5 text-[10px] font-bold tracking-widest text-[#00897b] uppercase"
+                >
+                  File Types
+                </div>
+                <div class="font-mono text-sm text-slate-500">
+                  {{ normalizedDataset.fileExtensions.join(", ") }}
+                </div>
               </section>
             </div>
           </div>
 
-          <section v-if="normalizedDataset.source && normalizedDataset.source !== 'Unknown'" class="mt-8 pt-4 border-t border-slate-50">
-            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Source Repository</div>
-            <p class="text-sm font-medium text-slate-600">{{ normalizedDataset.source }}</p>
+          <section
+            v-if="
+              normalizedDataset.source && normalizedDataset.source !== 'Unknown'
+            "
+            class="mt-8 border-t border-slate-50 pt-4"
+          >
+            <div
+              class="mb-1 text-[10px] font-bold tracking-widest text-slate-400 uppercase"
+            >
+              Source Repository
+            </div>
+            <p class="text-sm font-medium text-slate-600">
+              {{ normalizedDataset.source }}
+            </p>
           </section>
         </div>
 
-        <div class="lg:col-span-4 border border-slate-200 rounded-xl shadow-sm bg-white overflow-hidden flex flex-col">
-          <div class="p-8 flex-1 flex flex-col">
-            <h2 class="text-lg mb-6 font-bold">2. Provide Evaluation</h2>
-            <div class="text-[10px] font-bold uppercase text-[#00897b] tracking-widest mb-2">1. Selection <span class="text-red-500 font-bold">*</span></div>
-            <p class="text-sm mb-6">Does this dataset contain eye imaging dataset like OCT, OCTA, FLIO, or retinal imaging?</p>
-            <div class="flex flex-col gap-2.5 mb-8">
-              <button @click="confidence = 'yes'"
+        <div
+          class="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:col-span-4"
+        >
+          <div class="flex flex-1 flex-col p-8">
+            <h2 class="mb-6 text-lg font-bold">2. Provide Evaluation</h2>
+            <div
+              class="mb-2 text-[10px] font-bold tracking-widest text-[#00897b] uppercase"
+            >
+              1. Selection <span class="font-bold text-red-500">*</span>
+            </div>
+            <p class="mb-6 text-sm">
+              Does this dataset contain eye imaging dataset like OCT, OCTA,
+              FLIO, or retinal imaging?
+            </p>
+            <div class="mb-8 flex flex-col gap-2.5">
+              <button
+                @click="confidence = 'yes'"
                 :class="[
-                  'flex items-center justify-between px-4 py-3.5 rounded-lg border transition-all',
-                  confidence === 'yes' ? 'border-[#00897b] bg-[#e0f2f1] text-[#00897b] ring-1 ring-[#00897b]' : 'border-slate-200 hover:border-slate-300'
-                ]">
-                <span class="font-bold text-sm uppercase tracking-wide">Yes</span>
+                  'flex items-center justify-between rounded-lg border px-4 py-3.5 transition-all',
+                  confidence === 'yes'
+                    ? 'border-[#00897b] bg-[#e0f2f1] text-[#00897b] ring-1 ring-[#00897b]'
+                    : 'border-slate-200 hover:border-slate-300',
+                ]"
+              >
+                <span class="text-sm font-bold tracking-wide uppercase"
+                  >Yes</span
+                >
               </button>
 
-              <button @click="confidence = 'no'"
+              <button
+                @click="confidence = 'no'"
                 :class="[
-                  'flex items-center justify-between px-4 py-3.5 rounded-lg border transition-all',
-                  confidence === 'no' ? 'border-[#c62828] bg-[#ffebee] text-[#c62828] ring-1 ring-[#c62828]' : 'border-slate-200 hover:border-slate-300'
-                ]">
-                <span class="font-bold text-sm uppercase tracking-wide">No</span>
+                  'flex items-center justify-between rounded-lg border px-4 py-3.5 transition-all',
+                  confidence === 'no'
+                    ? 'border-[#c62828] bg-[#ffebee] text-[#c62828] ring-1 ring-[#c62828]'
+                    : 'border-slate-200 hover:border-slate-300',
+                ]"
+              >
+                <span class="text-sm font-bold tracking-wide uppercase"
+                  >No</span
+                >
               </button>
 
-              <button @click="confidence = 'maybe'"
+              <button
+                @click="confidence = 'maybe'"
                 :class="[
-                  'flex items-center justify-between px-4 py-3.5 rounded-lg border transition-all',
-                  confidence === 'maybe' ? 'border-slate-800 bg-slate-100 text-slate-800 ring-1 ring-slate-800' : 'border-slate-200 hover:border-slate-300'
-                ]">
-                <span class="font-bold text-sm uppercase tracking-wide">I cannot tell</span>
-                <span class="text-[10px] opacity-60 font-semibold italic">Information is insufficient to determine</span>
+                  'flex items-center justify-between rounded-lg border px-4 py-3.5 transition-all',
+                  confidence === 'maybe'
+                    ? 'border-slate-800 bg-slate-100 text-slate-800 ring-1 ring-slate-800'
+                    : 'border-slate-200 hover:border-slate-300',
+                ]"
+              >
+                <span class="text-sm font-bold tracking-wide uppercase"
+                  >I cannot tell</span
+                >
+                <span class="text-[10px] font-semibold italic opacity-60"
+                  >Information is insufficient to determine</span
+                >
               </button>
             </div>
 
             <div class="mt-auto">
-              <div class="text-[10px] font-bold uppercase text-[#00897b] tracking-widest mb-2">2. Optional Comments</div>
-              <UTextarea v-model="comment" placeholder="" :rows="4" class="w-full" />
+              <div
+                class="mb-2 text-[10px] font-bold tracking-widest text-[#00897b] uppercase"
+              >
+                2. Optional Comments
+              </div>
+              <UTextarea
+                v-model="comment"
+                placeholder=""
+                :rows="4"
+                class="w-full"
+              />
             </div>
           </div>
 
-          <div class="p-8 pt-0 mt-auto flex gap-3">
-            <button 
+          <div class="mt-auto flex gap-3 p-8 pt-0">
+            <button
               v-if="index > 0"
               type="button"
-              @click="goBack" 
+              @click="goBack"
               :disabled="submitting"
-              class="flex-1 py-4 rounded-lg font-bold text-sm uppercase tracking-widest border border-slate-200 text-slate-500 hover:bg-slate-50 transition-all disabled:opacity-30"
+              class="flex-1 rounded-lg border border-slate-200 py-4 text-sm font-bold tracking-widest text-slate-500 uppercase transition-all hover:bg-slate-50 disabled:opacity-30"
             >
               Back
             </button>
 
-            <button 
+            <button
               type="button"
-              @click="goNext" 
-              :disabled="!canSubmit || submitting" 
-              class="flex-[2] py-4 rounded-lg font-bold text-sm uppercase tracking-widest transition-all shadow-sm disabled:opacity-30"
-              :class="canSubmit 
-                ? 'bg-[#00897b] text-white hover:bg-[#00796b]' 
-                : 'bg-slate-100 text-slate-400 cursor-not-allowed'"
+              @click="goNext"
+              :disabled="!canSubmit || submitting"
+              class="flex-[2] rounded-lg py-4 text-sm font-bold tracking-widest uppercase shadow-sm transition-all disabled:opacity-30"
+              :class="
+                canSubmit
+                  ? 'bg-[#00897b] text-white hover:bg-[#00796b]'
+                  : 'cursor-not-allowed bg-slate-100 text-slate-400'
+              "
             >
               <span v-if="submitting">Processing...</span>
               <span v-else>Submit & Next</span>
             </button>
           </div>
         </div>
-
       </div>
     </main>
   </div>
