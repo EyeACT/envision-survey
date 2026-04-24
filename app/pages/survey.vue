@@ -234,7 +234,6 @@ const goNext = () => submitAndNavigate(index.value + 1);
         <div
           class="flex flex-col rounded-xl border border-slate-200 p-8 shadow-sm lg:col-span-8 dark:border-gray-700 dark:bg-gray-800"
         >
-          <h2 class="mb-6 text-lg font-bold">1. Review Dataset Information</h2>
           <div class="flex-1 space-y-8">
             <section v-if="normalizedDataset.title">
               <div
@@ -326,60 +325,62 @@ const goNext = () => submitAndNavigate(index.value + 1);
           class="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:col-span-4 dark:border-gray-700 dark:bg-gray-800"
         >
           <div class="flex flex-1 flex-col p-8">
-            <h2 class="mb-6 text-lg font-bold">2. Provide Evaluation</h2>
             <div
               class="mb-2 text-[10px] font-bold tracking-widest text-[#00897b] uppercase"
             >
-              1. Selection <span class="font-bold text-red-500">*</span>
+              Selection <span class="font-bold text-red-500">*</span>
             </div>
             <p class="mb-6 text-sm">
-              Does this dataset contain eye imaging dataset like OCT, OCTA,
+              Does this dataset contain eye imaging data like OCT, OCTA,
               FLIO, or retinal imaging?
             </p>
             <div class="mb-8 flex flex-col gap-2.5">
               <button
                 @click="confidence = 'yes'"
                 :class="[
-                  'flex items-center justify-between rounded-lg border px-4 py-3.5 transition-all',
+                  'flex items-center justify-between rounded-xl border px-5 py-4 transition-all',
                   confidence === 'yes'
-                    ? 'border-[#00897b] bg-[#e0f2f1] text-[#00897b] ring-1 ring-[#00897b] dark:bg-[#004d40]'
-                    : 'border-slate-200 hover:border-slate-300 dark:border-gray-600 dark:hover:border-gray-500',
+                    ? 'border-[#00897b] bg-[#e0f2f1] ring-1 ring-[#00897b]'
+                    : 'border-slate-200 bg-white hover:border-[#00897b]/50 hover:bg-slate-50'
                 ]"
               >
-                <span class="text-sm font-bold tracking-wide uppercase"
-                  >Yes</span
-                >
+                <span class="text-sm font-bold tracking-wide uppercase text-[#00897b]">Yes</span>
+                <UIcon 
+                  name="i-heroicons-check-circle-20-solid" 
+                  class="w-5 h-5 text-[#00897b]" 
+                />
               </button>
 
               <button
                 @click="confidence = 'no'"
                 :class="[
-                  'flex items-center justify-between rounded-lg border px-4 py-3.5 transition-all',
+                  'flex items-center justify-between rounded-xl border px-5 py-4 transition-all',
                   confidence === 'no'
-                    ? 'border-[#c62828] bg-[#ffebee] text-[#c62828] ring-1 ring-[#c62828] dark:bg-[#7f0000] dark:text-[#ef9a9a]'
-                    : 'border-slate-200 hover:border-slate-300 dark:border-gray-600 dark:hover:border-gray-500',
+                    ? 'border-[#c62828] bg-[#ffebee] ring-1 ring-[#c62828]'
+                    : 'border-slate-200 bg-white hover:border-[#c62828]/50 hover:bg-slate-50'
                 ]"
               >
-                <span class="text-sm font-bold tracking-wide uppercase"
-                  >No</span
-                >
+                <span class="text-sm font-bold tracking-wide uppercase text-[#c62828]">No</span>
+                <UIcon 
+                  name="i-heroicons-x-circle-20-solid" 
+                  class="w-5 h-5 text-[#c62828]" 
+                />
               </button>
 
               <button
                 @click="confidence = 'maybe'"
                 :class="[
-                  'flex items-center justify-between rounded-lg border px-4 py-3.5 transition-all',
+                  'flex items-center justify-between rounded-xl border px-5 py-4 transition-all',
                   confidence === 'maybe'
-                    ? 'border-slate-800 bg-slate-100 ring-1 ring-slate-800 dark:border-gray-300 dark:bg-gray-600 dark:ring-gray-300'
-                    : 'border-slate-200 hover:border-slate-300 dark:border-gray-600 dark:hover:border-gray-500',
+                    ? 'border-slate-600 bg-slate-100 ring-1 ring-slate-600'
+                    : 'border-slate-200 bg-white hover:border-slate-400 hover:bg-slate-50'
                 ]"
               >
-                <span class="text-sm font-bold tracking-wide uppercase"
-                  >I cannot tell</span
-                >
-                <span class="text-[10px] font-semibold italic opacity-60"
-                  >Information is insufficient to determine</span
-                >
+                <span class="text-sm font-bold tracking-wide uppercase text-slate-500">Unsure</span>
+                <UIcon 
+                  name="i-heroicons-question-mark-circle-20-solid" 
+                  class="w-5 h-5 text-slate-500" 
+                />
               </button>
             </div>
 
@@ -387,7 +388,7 @@ const goNext = () => submitAndNavigate(index.value + 1);
               <div
                 class="mb-2 text-[10px] font-bold tracking-widest text-[#00897b] uppercase"
               >
-                2. Optional Comments
+                Optional Comments
               </div>
               <UTextarea
                 v-model="comment"
