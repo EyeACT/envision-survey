@@ -331,8 +331,8 @@ const goNext = () => submitAndNavigate(index.value + 1);
               Selection <span class="font-bold text-red-500">*</span>
             </div>
             <p class="mb-6 text-sm">
-              Does this dataset contain eye imaging data like OCT, OCTA,
-              FLIO, or retinal imaging?
+              Does this dataset contain eye imaging data like OCT, OCTA, FLIO,
+              or retinal imaging?
             </p>
             <div class="mb-8 flex flex-col gap-2.5">
               <button
@@ -340,14 +340,17 @@ const goNext = () => submitAndNavigate(index.value + 1);
                 :class="[
                   'flex items-center justify-between rounded-xl border px-5 py-4 transition-all',
                   confidence === 'yes'
-                    ? 'border-[#00897b] bg-[#e0f2f1] ring-1 ring-[#00897b]'
-                    : 'border-slate-200 bg-white hover:border-[#00897b]/50 hover:bg-slate-50'
+                    ? 'border-[#00897b] bg-[#e0f2f1] ring-1 ring-[#00897b] dark:border-[#26a69a] dark:bg-[#0f2b28] dark:ring-[#26a69a]'
+                    : 'border-slate-200 bg-white hover:border-[#00897b]/50 hover:bg-slate-50 dark:border-gray-600 dark:bg-gray-800 dark:hover:border-[#26a69a]/60 dark:hover:bg-gray-700',
                 ]"
               >
-                <span class="text-sm font-bold tracking-wide uppercase text-[#00897b]">Yes</span>
-                <UIcon 
-                  name="i-heroicons-check-circle-20-solid" 
-                  class="w-5 h-5 text-[#00897b]" 
+                <span
+                  class="text-sm font-bold tracking-wide text-[#00897b] uppercase"
+                  >Yes</span
+                >
+                <UIcon
+                  name="i-heroicons-check-circle-20-solid"
+                  class="h-5 w-5 text-[#00897b]"
                 />
               </button>
 
@@ -356,14 +359,17 @@ const goNext = () => submitAndNavigate(index.value + 1);
                 :class="[
                   'flex items-center justify-between rounded-xl border px-5 py-4 transition-all',
                   confidence === 'no'
-                    ? 'border-[#c62828] bg-[#ffebee] ring-1 ring-[#c62828]'
-                    : 'border-slate-200 bg-white hover:border-[#c62828]/50 hover:bg-slate-50'
+                    ? 'border-[#c62828] bg-[#ffebee] ring-1 ring-[#c62828] dark:border-[#ef5350] dark:bg-[#311414] dark:ring-[#ef5350]'
+                    : 'border-slate-200 bg-white hover:border-[#c62828]/50 hover:bg-slate-50 dark:border-gray-600 dark:bg-gray-800 dark:hover:border-[#ef5350]/60 dark:hover:bg-gray-700',
                 ]"
               >
-                <span class="text-sm font-bold tracking-wide uppercase text-[#c62828]">No</span>
-                <UIcon 
-                  name="i-heroicons-x-circle-20-solid" 
-                  class="w-5 h-5 text-[#c62828]" 
+                <span
+                  class="text-sm font-bold tracking-wide text-[#c62828] uppercase"
+                  >No</span
+                >
+                <UIcon
+                  name="i-heroicons-x-circle-20-solid"
+                  class="h-5 w-5 text-[#c62828]"
                 />
               </button>
 
@@ -372,14 +378,17 @@ const goNext = () => submitAndNavigate(index.value + 1);
                 :class="[
                   'flex items-center justify-between rounded-xl border px-5 py-4 transition-all',
                   confidence === 'maybe'
-                    ? 'border-slate-600 bg-slate-100 ring-1 ring-slate-600'
-                    : 'border-slate-200 bg-white hover:border-slate-400 hover:bg-slate-50'
+                    ? 'border-slate-600 bg-slate-100 ring-1 ring-slate-600 dark:border-slate-400 dark:bg-slate-800 dark:ring-slate-400'
+                    : 'border-slate-200 bg-white hover:border-slate-400 hover:bg-slate-50 dark:border-gray-600 dark:bg-gray-800 dark:hover:border-slate-400 dark:hover:bg-gray-700',
                 ]"
               >
-                <span class="text-sm font-bold tracking-wide uppercase text-slate-500">Unsure</span>
-                <UIcon 
-                  name="i-heroicons-question-mark-circle-20-solid" 
-                  class="w-5 h-5 text-slate-500" 
+                <span
+                  class="text-sm font-bold tracking-wide text-slate-500 uppercase"
+                  >Unsure</span
+                >
+                <UIcon
+                  name="i-heroicons-question-mark-circle-20-solid"
+                  class="h-5 w-5 text-slate-500"
                 />
               </button>
             </div>
