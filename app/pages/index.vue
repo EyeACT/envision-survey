@@ -158,15 +158,6 @@ const workflowSteps = [
         </div>
         <div class="flex flex-wrap justify-center gap-4">
           <UButton
-            label="James O'Neill"
-            to="mailto:joneill@calmi2.org"
-            variant="ghost"
-            icon="i-lucide-mail"
-            color="gray"
-            size="xs"
-            class="hover:text-[#00897b]"
-          />
-          <UButton
             label="Bhavesh Patel"
             to="mailto:bPatel@calmi2.org"
             variant="ghost"

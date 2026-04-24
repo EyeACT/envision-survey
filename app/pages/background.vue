@@ -124,7 +124,7 @@ async function onSubmit() {
               </UFormField>
             </div>
 
-            <div class="col-span-1 lg:col-span-3">
+            <div class="col-span-1 lg:col-span-2">
               <UFormField>
                 <template #label>
                   <div class="flex items-center gap-2 mb-4">
@@ -136,7 +136,7 @@ async function onSubmit() {
               </UFormField>
             </div>
 
-            <div class="col-span-1 lg:col-span-3">
+            <div class="col-span-1 lg:col-span-4">
               <UFormField>
                 <template #label>
                   <div class="flex items-center gap-2 mb-4">
