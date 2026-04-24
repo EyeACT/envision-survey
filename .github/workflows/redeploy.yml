@@ -1,0 +1,25 @@
+name: Rebuild website
+
+on:
+  workflow_dispatch:
+
+jobs:
+  add-empty-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Set email credentials
+        run: 'git config user.email "ssoundarajan@calmi2.org"'
+
+      - name: Set name credentials
+        run: 'git config user.name "Sanjay Soundarajan"'
+
+      - name: Add empty commit
+        run: "git commit -m 'ci: redeploy website' --allow-empty --no-verify"
+
+      - name: Push to repo
+        run: "git push origin main"
