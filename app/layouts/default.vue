@@ -12,11 +12,25 @@ const copyToClipboard = async () => {
     useToast().add({
       title: "Copied to clipboard",
       color: "success",
-      description: `Your ID: ${userId.value}`,
+      description: `Your Reviewer ID: ${userId.value}`,
       icon: "material-symbols:check-circle-outline",
     });
   }
 };
+
+const items = computed<NavigationMenuItem[]>(() => [
+  {
+    label: "Reviewer ID: " + (userId.value ?? "None"),
+    icon: "i-heroicons-clipboard-document-20-solid",
+    click: () => copyToClipboard(),
+  },
+  {
+    label: "Logout",
+    icon: "mdi:login",
+    to: "/logout",
+    show: !!userId.value,
+  },
+]);
 
 const footerItems: NavigationMenuItem[] = [
   {
@@ -31,56 +45,51 @@ const footerItems: NavigationMenuItem[] = [
   <div>
     <UHeader>
       <template #title>
-        <NuxtLink to="/"> Envision Survey
- </NuxtLink>
+        <NuxtLink to="/" class="flex text-2xl font-bold">
+          Envision Survey
+        </NuxtLink>
       </template>
 
       <template #right>
-        <UTooltip text="Click to copy" mode="hover" v-if="userId">
+        <UTooltip text="Click to copy" mode="hover">
           <UButton
             color="neutral"
             variant="ghost"
             icon="i-heroicons-clipboard-document-20-solid"
-            class="text-xs"
-            :label="userId ? `Reviewer ID: ${userId}` : 'No ID'"
+            :label="userId ? `Reviewer ID: ${userId}` : 'No Reviewer ID'"
             @click="copyToClipboard"
+            class="invisible text-[1px] md:visible md:text-base"
           />
         </UTooltip>
 
         <AuthState v-slot="{ loggedIn }">
           <UButton
-            v-if="$route.path !== '/survey'"
-            to="/survey"
-            color="primary"
-            class="!bg-[#00897b] hover:!bg-[#00796b]"
-          >
-            Start Reviewing
-            <template #trailing>
-              <UIcon name="i-heroicons-arrow-right-20-solid" class="w-5 h-5" />
-            </template>
-          </UButton>
-          <UButton
             v-if="loggedIn"
             color="neutral"
             variant="outline"
             to="/logout"
+            class="hidden sm:block"
           >
             Logout
           </UButton>
 
           <div v-else class="flex items-center justify-center gap-3">
-            <UButton to="/login" color="neutral" variant="outline">
-              Resume Session
-            </UButton>
-
-            <UButton to="/signup" color="neutral">
+            <UButton to="/login" color="neutral" class="w-max">
               <template #trailing>
                 <Icon name="i-heroicons-arrow-right-20-solid" size="20" />
               </template>
-              Get Started
+              Start Reviewing
             </UButton>
           </div>
         </AuthState>
+      </template>
+
+      <template #body>
+        <UNavigationMenu
+          :items="items"
+          orientation="vertical"
+          class="-mx-2.5"
+        />
       </template>
     </UHeader>
 
