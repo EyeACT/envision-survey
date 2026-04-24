@@ -179,11 +179,13 @@ const goNext = () => submitAndNavigate(index.value + 1);
 </script>
 
 <template>
-  <div class="min-h-screen bg-white font-sans text-slate-900 antialiased">
-    <header class="sticky top-0 z-30 border-slate-200 bg-white px-6 py-6">
+  <div class="min-h-screen bg-white font-sans antialiased dark:bg-gray-900">
+    <header
+      class="sticky top-0 z-30 border-slate-200 bg-white px-6 py-6 dark:border-gray-700 dark:bg-gray-900"
+    >
       <div class="mx-auto flex max-w-[800px] flex-col items-center gap-3">
         <div
-          class="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 shadow-sm"
+          class="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 shadow-sm dark:bg-gray-700"
         >
           <div
             class="h-full bg-[#00897b] transition-all duration-500 ease-out"
@@ -193,12 +195,10 @@ const goNext = () => submitAndNavigate(index.value + 1);
 
         <div class="flex w-full items-center justify-between px-1">
           <div class="flex items-center gap-1.5">
-            <span class="text-[12px] font-black tracking-tight text-slate-900">
+            <span class="text-[12px] font-black tracking-tight">
               {{ index + 1 }}
             </span>
-            <span
-              class="text-[10px] font-bold tracking-widest text-slate-400 uppercase"
-            >
+            <span class="text-[10px] font-bold tracking-widest uppercase">
               / {{ total }} Records
             </span>
           </div>
@@ -214,13 +214,13 @@ const goNext = () => submitAndNavigate(index.value + 1);
 
     <main class="mx-auto max-w-[1400px] px-6">
       <div
-        class="mb-6 flex items-start gap-4 rounded-xl border border-slate-200 bg-slate-50/50 px-5 py-4 shadow-sm"
+        class="mb-6 flex items-start gap-4 rounded-xl border border-slate-200 bg-slate-50/50 px-5 py-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
       >
         <UIcon
           name="material-symbols:info-outline-rounded"
           class="mt-0.5 h-5 w-5 shrink-0 text-[#00897b]"
         />
-        <div class="text-[13px] leading-relaxed text-slate-600">
+        <div class="text-[13px] leading-relaxed">
           Please review the Dataset details on the left, then complete the
           Evaluation on the right. Select "Submit & Next" to save the record and
           advance.
@@ -232,7 +232,7 @@ const goNext = () => submitAndNavigate(index.value + 1);
         class="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12"
       >
         <div
-          class="flex flex-col rounded-xl border border-slate-200 p-8 shadow-sm lg:col-span-8"
+          class="flex flex-col rounded-xl border border-slate-200 p-8 shadow-sm lg:col-span-8 dark:border-gray-700 dark:bg-gray-800"
         >
           <h2 class="mb-6 text-lg font-bold">1. Review Dataset Information</h2>
           <div class="flex-1 space-y-8">
@@ -242,9 +242,7 @@ const goNext = () => submitAndNavigate(index.value + 1);
               >
                 Title
               </div>
-              <h2
-                class="text-lg leading-tight font-semibold tracking-tight text-slate-800"
-              >
+              <h2 class="text-lg leading-tight font-semibold tracking-tight">
                 {{ normalizedDataset.title }}
               </h2>
             </section>
@@ -258,7 +256,7 @@ const goNext = () => submitAndNavigate(index.value + 1);
 
               <div
                 ref="descriptionRef"
-                class="overflow-hidden text-[15px] leading-relaxed text-slate-700 transition-all duration-300"
+                class="overflow-hidden text-[15px] leading-relaxed transition-all duration-300"
                 :class="{ 'line-clamp-5': !isExpanded }"
               >
                 {{ normalizedDataset.description }}
@@ -267,7 +265,7 @@ const goNext = () => submitAndNavigate(index.value + 1);
               <div v-if="isTruncated || isExpanded" class="mt-3">
                 <button
                   @click="isExpanded = !isExpanded"
-                  class="group flex items-center gap-1 text-[10px] font-bold tracking-widest text-slate-400 uppercase transition-all hover:text-[#00897b]"
+                  class="group flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase transition-all hover:text-[#00897b]"
                 >
                   {{ isExpanded ? "Show Less" : "Expand All" }}
                   <UIcon
@@ -282,14 +280,16 @@ const goNext = () => submitAndNavigate(index.value + 1);
               </div>
             </section>
 
-            <div class="grid grid-cols-2 gap-8 border-t border-slate-100 pt-4">
+            <div
+              class="grid grid-cols-2 gap-8 border-t border-slate-100 pt-4 dark:border-gray-700"
+            >
               <section v-if="normalizedDataset.keywords?.length">
                 <div
                   class="mb-1.5 text-[10px] font-bold tracking-widest text-[#00897b] uppercase"
                 >
                   Identifiers / Keywords
                 </div>
-                <div class="text-sm text-slate-600">
+                <div class="text-sm">
                   {{ normalizedDataset.keywords.join(", ") }}
                 </div>
               </section>
@@ -300,7 +300,7 @@ const goNext = () => submitAndNavigate(index.value + 1);
                 >
                   File Types
                 </div>
-                <div class="font-mono text-sm text-slate-500">
+                <div class="font-mono text-sm">
                   {{ normalizedDataset.fileExtensions.join(", ") }}
                 </div>
               </section>
@@ -311,21 +311,19 @@ const goNext = () => submitAndNavigate(index.value + 1);
             v-if="
               normalizedDataset.source && normalizedDataset.source !== 'Unknown'
             "
-            class="mt-8 border-t border-slate-50 pt-4"
+            class="mt-8 border-t border-slate-50 pt-4 dark:border-gray-700"
           >
-            <div
-              class="mb-1 text-[10px] font-bold tracking-widest text-slate-400 uppercase"
-            >
+            <div class="mb-1 text-[10px] font-bold tracking-widest uppercase">
               Source Repository
             </div>
-            <p class="text-sm font-medium text-slate-600">
+            <p class="text-sm font-medium">
               {{ normalizedDataset.source }}
             </p>
           </section>
         </div>
 
         <div
-          class="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:col-span-4"
+          class="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:col-span-4 dark:border-gray-700 dark:bg-gray-800"
         >
           <div class="flex flex-1 flex-col p-8">
             <h2 class="mb-6 text-lg font-bold">2. Provide Evaluation</h2>
@@ -344,8 +342,8 @@ const goNext = () => submitAndNavigate(index.value + 1);
                 :class="[
                   'flex items-center justify-between rounded-lg border px-4 py-3.5 transition-all',
                   confidence === 'yes'
-                    ? 'border-[#00897b] bg-[#e0f2f1] text-[#00897b] ring-1 ring-[#00897b]'
-                    : 'border-slate-200 hover:border-slate-300',
+                    ? 'border-[#00897b] bg-[#e0f2f1] text-[#00897b] ring-1 ring-[#00897b] dark:bg-[#004d40]'
+                    : 'border-slate-200 hover:border-slate-300 dark:border-gray-600 dark:hover:border-gray-500',
                 ]"
               >
                 <span class="text-sm font-bold tracking-wide uppercase"
@@ -358,8 +356,8 @@ const goNext = () => submitAndNavigate(index.value + 1);
                 :class="[
                   'flex items-center justify-between rounded-lg border px-4 py-3.5 transition-all',
                   confidence === 'no'
-                    ? 'border-[#c62828] bg-[#ffebee] text-[#c62828] ring-1 ring-[#c62828]'
-                    : 'border-slate-200 hover:border-slate-300',
+                    ? 'border-[#c62828] bg-[#ffebee] text-[#c62828] ring-1 ring-[#c62828] dark:bg-[#7f0000] dark:text-[#ef9a9a]'
+                    : 'border-slate-200 hover:border-slate-300 dark:border-gray-600 dark:hover:border-gray-500',
                 ]"
               >
                 <span class="text-sm font-bold tracking-wide uppercase"
@@ -372,8 +370,8 @@ const goNext = () => submitAndNavigate(index.value + 1);
                 :class="[
                   'flex items-center justify-between rounded-lg border px-4 py-3.5 transition-all',
                   confidence === 'maybe'
-                    ? 'border-slate-800 bg-slate-100 text-slate-800 ring-1 ring-slate-800'
-                    : 'border-slate-200 hover:border-slate-300',
+                    ? 'border-slate-800 bg-slate-100 ring-1 ring-slate-800 dark:border-gray-300 dark:bg-gray-600 dark:ring-gray-300'
+                    : 'border-slate-200 hover:border-slate-300 dark:border-gray-600 dark:hover:border-gray-500',
                 ]"
               >
                 <span class="text-sm font-bold tracking-wide uppercase"
@@ -406,7 +404,7 @@ const goNext = () => submitAndNavigate(index.value + 1);
               type="button"
               @click="goBack"
               :disabled="submitting"
-              class="flex-1 rounded-lg border border-slate-200 py-4 text-sm font-bold tracking-widest text-slate-500 uppercase transition-all hover:bg-slate-50 disabled:opacity-30"
+              class="flex-1 rounded-lg border border-slate-200 py-4 text-sm font-bold tracking-widest uppercase transition-all hover:bg-slate-50 disabled:opacity-30 dark:border-gray-600 dark:hover:bg-gray-700"
             >
               Back
             </button>
@@ -419,7 +417,7 @@ const goNext = () => submitAndNavigate(index.value + 1);
               :class="
                 canSubmit
                   ? 'bg-[#00897b] text-white hover:bg-[#00796b]'
-                  : 'cursor-not-allowed bg-slate-100 text-slate-400'
+                  : 'cursor-not-allowed bg-slate-100 dark:bg-gray-700'
               "
             >
               <span v-if="submitting">Processing...</span>
